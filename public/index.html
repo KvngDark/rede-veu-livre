@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>REDE VÉU LIVRE - Sistema de Resistência</title>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a0a2e 100%);
+            color: #b0b0b0;
+            font-family: 'Courier New', 'Segoe UI', monospace;
+            padding: 10px;
+            min-height: 100vh;
+        }
+
+        /* Mobile First - Design Responsivo */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid #6a0dad;
+            border-radius: 10px;
+            padding: 15px;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #6a0dad;
+        }
+
+        .header h1 {
+            color: #9b30ff;
+            font-size: 1.8em;
+            text-shadow: 2px 2px 0 #4a0e4e;
+        }
+
+        .subtitulo {
+            color: #ff3366;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+
+        /* Navegação Mobile */
+        .nav-tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 20px;
+            justify-content: center;
+        }
+
+        .tab-btn {
+            background: #1a1a2e;
+            color: #9b30ff;
+            border: 1px solid #6a0dad;
+            padding: 10px 15px;
+            cursor: pointer;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 0.9em;
+            transition: all 0.3s;
+            flex: 1;
+            min-width: 80px;
+            text-align: center;
+        }
+
+        .tab-btn.active {
+            background: #6a0dad;
+            color: white;
+            border-color: #ff3366;
+        }
+
+        .tab-btn:hover {
+            transform: translateY(-2px);
+            background: #2a0a3e;
+        }
+
+        /* Páginas */
+        .page {
+            display: none;
+            animation: fadeIn 0.3s;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Status do Usuário */
+        .user-status {
+            background: #0a0a0a;
+            padding: 10px;
+            margin-bottom: 15px;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        /* Chat */
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            height: 500px;
+            background: #0a0a0a;
+            border: 1px solid #4a0e4e;
+            border-radius: 5px;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+        }
+
+        .message {
+            margin-bottom: 10px;
+            padding: 8px;
+            background: #1a1a2e;
+            border-radius: 5px;
+            word-wrap: break-word;
+        }
+
+        .message strong {
+            color: #9b30ff;
+        }
+
+        .message small {
+            font-size: 0.7em;
+            color: #666;
+        }
+
+        .chat-input-area {
+            display: flex;
+            padding: 10px;
+            gap: 10px;
+            border-top: 1px solid #4a0e4e;
+        }
+
+        .chat-input-area input {
+            flex: 1;
+            padding: 10px;
+            background: #0a0a0a;
+            border: 1px solid #6a0dad;
+            color: white;
+            border-radius: 5px;
+        }
+
+        /* Posts do Fórum */
+        .post {
+            background: #0f0f1a;
+            margin-bottom: 15px;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid;
+        }
+
+        .post.alerta { border-left-color: #ff0000; }
+        .post.discussao { border-left-color: #ffcc00; }
+        .post.relato { border-left-color: #00aaff; }
+        .post.ajuda { border-left-color: #ff3366; background: #1a0a1a; }
+
+        /* Mapa Interativo */
+        .states-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .state-card {
+            background: #0f0f1a;
+            border: 1px solid #6a0dad;
+            padding: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.3s;
+        }
+
+        .state-card:hover {
+            transform: translateY(-3px);
+            background: #1a1a2e;
+        }
+
+        .state-card.alta { border-left: 4px solid #00ff00; }
+        .state-card.media { border-left: 4px solid #ff9800; }
+        .state-card.baixa { border-left: 4px solid #ff0000; }
+
+        .state-info-panel {
+            background: #0a0a0a;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 15px;
+        }
+
+        /* Formulários */
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        input, textarea, select {
+            width: 100%;
+            padding: 10px;
+            background: #0a0a0a;
+            border: 1px solid #6a0dad;
+            color: white;
+            border-radius: 5px;
+            font-family: monospace;
+        }
+
+        button {
+            background: #6a0dad;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-family: monospace;
+            transition: all 0.3s;
+        }
+
+        button:hover {
+            background: #9b30ff;
+            transform: translateY(-2px);
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.95);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .modal-content {
+            background: #0a0a0a;
+            border: 2px solid #6a0dad;
+            padding: 20px;
+            border-radius: 10px;
+            max-width: 500px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        /* Alertas */
+        .alert-banner {
+            background: #1a0a0a;
+            border-left: 4px solid #ff3366;
+            padding: 10px;
+            margin: 10px 0;
+            font-size: 0.9em;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .tab-btn {
+                font-size: 0.8em;
+                padding: 8px 10px;
+            }
+            
+            .states-grid {
+                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>🌐 REDE VÉU LIVRE</h1>
+        <div class="subtitulo">"Se você está lendo isso, você ainda tem escolha."</div>
+    </div>
+
+    <div class="user-status" id="userStatus">
+        <span>🔒 Não logado</span>
+        <button onclick="showLoginModal()">Entrar / Cadastrar</button>
+    </div>
+
+    <div class="alert-banner">
+        ⚠️ AVISO: Evite contato com pregadores da Última Correção. Confie apenas na Rede. ⚠️
+    </div>
+
+    <div class="nav-tabs">
+        <button class="tab-btn active" onclick="switchPage('home')">🏠 Início</button>
+        <button class="tab-btn" onclick="switchPage('forum')">💬 Fórum</button>
+        <button class="tab-btn" onclick="switchPage('map')">🗺️ Mapa</button>
+        <button class="tab-btn" onclick="switchPage('chat')">💭 Chat</button>
+        <button class="tab-btn" onclick="switchPage('missing')">📋 Desaparecidos</button>
+    </div>
+
+    <!-- Página Inicial -->
+    <div id="home" class="page active">
+        <h2>Bem-vindo à Resistência</h2>
+        <p>Somos a REDE VÉU LIVRE, liderados por Rian Gomes. Lutamos contra o culto "Última Correção" que busca "corrigir" a humanidade.</p>
+        <p>Aqui você pode compartilhar informações, encontrar aliados e resistir.</p>
+        <div class="alert-banner" style="margin-top: 20px;">
+            🔴 ÚLTIMA HORA: Atividade paranormal detectada no Setor Sul. Evite a região!
+        </div>
+        <div class="alert-banner">
+            🩸 Posto de suprimentos na Zona Leste - Senha: "O véu caiu"
+        </div>
+    </div>
+
+    <!-- Fórum -->
+    <div id="forum" class="page">
+        <h2>Fórum de Resistência</h2>
+        <button onclick="showNewPostModal()" style="margin-bottom: 15px;">+ Novo Post</button>
+        <div id="postsContainer"></div>
+    </div>
+
+    <!-- Mapa Interativo -->
+    <div id="map" class="page">
+        <h2>Mapa de Segurança - Brasil</h2>
+        <div class="states-grid" id="statesGrid"></div>
+        <div id="stateInfoPanel" class="state-info-panel">
+            <p>Selecione um estado para ver informações detalhadas</p>
+        </div>
+    </div>
+
+    <!-- Chat em Tempo Real -->
+    <div id="chat" class="page">
+        <h2>Chat da Resistência - Em Tempo Real</h2>
+        <div class="chat-container">
+            <div class="chat-messages" id="chatMessages"></div>
+            <div class="chat-input-area">
+                <input type="text" id="chatInput" placeholder="Digite sua mensagem..." onkeypress="if(event.key==='Enter') sendChatMessage()">
+                <button onclick="sendChatMessage()">Enviar</button>
+            </div>
+        </div>
+        <div id="chatStatus" style="margin-top: 10px; font-size: 0.8em;"></div>
+    </div>
+
+    <!-- Desaparecidos -->
+    <div id="missing" class="page">
+        <h2>Quadro de Desaparecidos</h2>
+        <button onclick="showNewMissingModal()" style="margin-bottom: 15px;">+ Adicionar Pessoa</button>
+        <div id="missingContainer"></div>
+    </div>
+</div>
+
+<!-- Modal Login -->
+<div id="loginModal" class="modal">
+    <div class="modal-content">
+        <h3>REDE VÉU LIVRE - Acesso</h3>
+        <input type="text" id="loginUser" placeholder="Usuário"><br><br>
+        <input type="password" id="loginPass" placeholder="Senha"><br><br>
+        <button onclick="login()">Entrar</button>
+        <button onclick="register()">Criar Conta</button>
+        <button onclick="closeModal('loginModal')">Fechar</button>
+    </div>
+</div>
+
+<!-- Modal Novo Post -->
+<div id="postModal" class="modal">
+    <div class="modal-content">
+        <h3>Novo Post</h3>
+        <select id="postType">
+            <option value="alerta">🔴 Alerta</option>
+            <option value="discussao">🟡 Discussão</option>
+            <option value="relato">🔵 Relato</option>
+            <option value="ajuda">🩸 Pedido de Ajuda</option>
+        </select><br><br>
+        <input type="text" id="postTitle" placeholder="Título"><br><br>
+        <textarea id="postContent" placeholder="Conteúdo..."></textarea><br><br>
+        <button onclick="createPost()">Publicar</button>
+        <button onclick="closeModal('postModal')">Cancelar</button>
+    </div>
+</div>
+
+<!-- Modal Novo Desaparecido -->
+<div id="missingModal" class="modal">
+    <div class="modal-content">
+        <h3>Adicionar Desaparecido</h3>
+        <input type="text" id="missingName" placeholder="Nome"><br><br>
+        <input type="number" id="missingAge" placeholder="Idade"><br><br>
+        <input type="text" id="missingLocation" placeholder="Última localização"><br><br>
+        <textarea id="missingDesc" placeholder="Descrição..."></textarea><br><br>
+        <button onclick="addMissing()">Adicionar</button>
+        <button onclick="closeModal('missingModal')">Cancelar</button>
+    </div>
+</div>
+
+<script>
+    // Variáveis globais
+    let currentUser = null;
+    let socket = null;
+    let posts = [];
+    let missing = [];
+    let states = [];
+
+    // ============ SOCKET.IO - CHAT EM TEMPO REAL ============
+    function initSocket() {
+        if (socket) socket.disconnect();
+        
+        socket = io({
+            auth: { username: currentUser }
+        });
+        
+        socket.on('connect', () => {
+            document.getElementById('chatStatus').innerHTML = '✅ Conectado ao chat da resistência';
+        });
+        
+        socket.on('chat history', (messages) => {
+            const container = document.getElementById('chatMessages');
+            container.innerHTML = '';
+            messages.forEach(msg => {
+                addMessageToChat(msg.sender, msg.message, msg.timestamp);
+            });
+        });
+        
+        socket.on('chat message', (msg) => {
+            addMessageToChat(msg.sender, msg.message, msg.timestamp);
+        });
+        
+        socket.on('user joined', (msg) => {
+            addSystemMessage(msg);
+        });
+        
+        socket.on('user left', (msg) => {
+            addSystemMessage(msg);
+        });
+    }
+    
+    function addMessageToChat(sender, message, timestamp) {
+        const container = document.getElementById('chatMessages');
+        const time = timestamp ? new Date(timestamp).toLocaleTimeString() : new Date().toLocaleTimeString();
+        const div = document.createElement('div');
+        div.className = 'message';
+        div.innerHTML = `<strong>${sender}:</strong> ${message}<br><small>${time}</small>`;
+        container.appendChild(div);
+        container.scrollTop = container.scrollHeight;
+    }
+    
+    function addSystemMessage(msg) {
+        const container = document.getElementById('chatMessages');
+        const div = document.createElement('div');
+        div.className = 'message';
+        div.style.background = '#2a1a2e';
+        div.style.fontStyle = 'italic';
+        div.innerHTML = `<em>🔔 ${msg}</em>`;
+        container.appendChild(div);
+        container.scrollTop = container.scrollHeight;
+    }
+    
+    function sendChatMessage() {
+        const input = document.getElementById('chatInput');
+        const message = input.value.trim();
+        if (!message || !currentUser) {
+            alert('Faça login para enviar mensagens');
+            return;
+        }
+        if (socket) {
+            socket.emit('chat message', { message: message });
+            input.value = '';
+        }
+    }
+
+    // ============ API Calls ============
+    async function apiCall(url, method = 'GET', data = null) {
+        const options = {
+            method: method,
+            headers: { 'Content-Type': 'application/json' }
+        };
+        if (data) options.body = JSON.stringify(data);
+        
+        const response = await fetch(url, options);
+        return response.json();
+    }
+    
+    async function login() {
+        const username = document.getElementById('loginUser').value;
+        const password = document.getElementById('loginPass').value;
+        
+        const result = await apiCall('/api/login', 'POST', { username, password });
+        if (result.success) {
+            currentUser = username;
+            document.getElementById('userStatus').innerHTML = `✅ Logado: ${currentUser} | <button onclick="logout()">Sair</button>`;
+            closeModal('loginModal');
+            initSocket();
+            loadForum();
+            loadMissing();
+            alert(`Bem-vindo à resistência, ${username}`);
+        } else {
+            alert('Erro no login: ' + result.error);
+        }
+    }
+    
+    async function register() {
+        const username = document.getElementById('loginUser').value;
+        const password = document.getElementById('loginPass').value;
+        
+        const result = await apiCall('/api/register', 'POST', { username, password });
+        if (result.success) {
+            alert('Conta criada! Faça login.');
+        } else {
+            alert('Erro: ' + result.error);
+        }
+    }
+    
+    async function logout() {
+        await apiCall('/api/logout', 'POST');
+        currentUser = null;
+        if (socket) socket.disconnect();
+        document.getElementById('userStatus').innerHTML = '🔒 Não logado | <button onclick="showLoginModal()">Entrar</button>';
+        switchPage('home');
+    }
+    
+    async function loadForum() {
+        const result = await apiCall('/api/posts');
+        posts = result;
+        renderForum();
+    }
+    
+    async function createPost() {
+        if (!currentUser) {
+            alert('Faça login primeiro');
+            return;
+        }
+        
+        const type = document.getElementById('postType').value;
+        const title = document.getElementById('postTitle').value;
+        const content = document.getElementById('postContent').value;
+        
+        const result = await apiCall('/api/posts', 'POST', { type, title, content });
+        if (result.success) {
+            closeModal('postModal');
+            loadForum();
+            document.getElementById('postTitle').value = '';
+            document.getElementById('postContent').value = '';
+        } else {
+            alert('Erro ao criar post');
+        }
+    }
+    
+    function renderForum() {
+        const container = document.getElementById('postsContainer');
+        if (!posts.length) {
+            container.innerHTML = '<p>Nenhum post ainda. Seja o primeiro a postar!</p>';
+            return;
+        }
+        
+        container.innerHTML = posts.map(post => `
+            <div class="post ${post.type}">
+                <div class="post-header">
+                    <strong>${getTypeIcon(post.type)} ${post.author}</strong>
+                    <small>${new Date(post.created_at).toLocaleString()}</small>
+                </div>
+                <h3>${post.title}</h3>
+                <p>${post.content}</p>
+                <button onclick="loadComments(${post.id})">💬 Comentar</button>
+                <div id="comments-${post.id}"></div>
+            </div>
+        `).join('');
+    }
+    
+    async function loadComments(postId) {
+        const comments = await apiCall(`/api/comments/${postId}`);
+        const container = document.getElementById(`comments-${postId}`);
+        if (!container) return;
+        
+        container.innerHTML = `
+            <div style="margin-top: 10px;">
+                <textarea id="comment-${postId}" placeholder="Seu comentário..." rows="2" style="width: 100%;"></textarea>
+                <button onclick="addComment(${postId})">Enviar</button>
+                <div style="margin-top: 10px;">
+                    ${comments.map(c => `<div style="background: #0a0a0a; padding: 5px; margin: 5px 0;"><strong>${c.author}:</strong> ${c.content}<br><small>${new Date(c.created_at).toLocaleString()}</small></div>`).join('')}
+                </div>
+            </div>
+        `;
+    }
+    
+    async function addComment(postId) {
+        if (!currentUser) {
+            alert('Faça login para comentar');
+            return;
+        }
+        const content = document.getElementById(`comment-${postId}`).value;
+        if (!content) return;
+        
+        await apiCall('/api/comments', 'POST', { postId, content });
+        loadComments(postId);
+    }
+    
+    // Mapa
+    async function loadStates() {
+        const result = await apiCall('/api/states');
+        states = result;
+        renderStates();
+    }
+    
+    function renderStates() {
+        const container = document.getElementById('statesGrid');
+        container.innerHTML = states.map(state => `
+            <div class="state-card ${state.safety.toLowerCase()}" onclick="showStateInfo('${state.uf}')">
+                <strong>${state.uf}</strong><br>
+                ${state.name}<br>
+                <small>Segurança: ${state.safety}</small>
+            </div>
+        `).join('');
+    }
+    
+    async function showStateInfo(uf) {
+        const state = await apiCall(`/api/state/${uf}`);
+        const panel = document.getElementById('stateInfoPanel');
+        if (state) {
+            let safetyColor = state.safety === 'Alta' ? '#00ff00' : (state.safety === 'Média' ? '#ff9800' : '#ff0000');
+            panel.innerHTML = `
+                <h3>${state.name} (${state.uf})</h3>
+                <p><strong>População:</strong> ${state.population}</p>
+                <p><strong>Status:</strong> ${state.status}</p>
+                <p><strong>Grupos Dominantes:</strong> ${state.groups}</p>
+                <p><strong>Recomendação:</strong> ${state.recommendation}</p>
+                <p style="color: ${safetyColor};"><strong>Nível de Segurança:</strong> ${state.safety}</p>
+            `;
+        }
+    }
+    
+    // Desaparecidos
+    async function loadMissing() {
+        const result = await apiCall('/api/missing');
+        missing = result;
+        renderMissing();
+    }
+    
+    async function addMissing() {
+        if (!currentUser) {
+            alert('Faça login primeiro');
+            return;
+        }
+        
+        const name = document.getElementById('missingName').value;
+        const age = document.getElementById('missingAge').value;
+        const location = document.getElementById('missingLocation').value;
+        const description = document.getElementById('missingDesc').value;
+        
+        const result = await apiCall('/api/missing', 'POST', { name, age, location, description });
+        if (result.success) {
+            closeModal('missingModal');
+            loadMissing();
+            document.getElementById('missingName').value = '';
+            document.getElementById('missingAge').value = '';
+            document.getElementById('missingLocation').value = '';
+            document.getElementById('missingDesc').value = '';
+        }
+    }
+    
+    function renderMissing() {
+        const container = document.getElementById('missingContainer');
+        if (!missing.length) {
+            container.innerHTML = '<p>Nenhum desaparecido registrado.</p>';
+            return;
+        }
+        
+        container.innerHTML = missing.map(person => `
+            <div class="post" style="border-left-color: #ff3366;">
+                <h3>${person.name}</h3>
+                <p><strong>Idade:</strong> ${person.age || '?'}</p>
+                <p><strong>Último local:</strong> ${person.location}</p>
+                <p><strong>Descrição:</strong> ${person.description}</p>
+                <p><strong>Status:</strong> ${person.status}</p>
+                <small>Reportado por: ${person.created_by}</small>
+            </div>
+        `).join('');
+    }
+    
+    function getTypeIcon(type) {
+        const icons = { alerta: '🔴', discussao: '🟡', relato: '🔵', ajuda: '🩸' };
+        return icons[type] || '📝';
+    }
+    
+    // UI Helpers
+    function switchPage(pageId) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.getElementById(pageId).classList.add('active');
+        
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        event.target.classList.add('active');
+        
+        if (pageId === 'forum') loadForum();
+        if (pageId === 'missing') loadMissing();
+        if (pageId === 'map') loadStates();
+    }
+    
+    function showLoginModal() {
+        document.getElementById('loginModal').style.display = 'flex';
+    }
+    
+    function showNewPostModal() {
+        if (!currentUser) {
+            alert('Faça login para postar');
+            showLoginModal();
+            return;
+        }
+        document.getElementById('postModal').style.display = 'flex';
+    }
+    
+    function showNewMissingModal() {
+        if (!currentUser) {
+            alert('Faça login para adicionar');
+            showLoginModal();
+            return;
+        }
+        document.getElementById('missingModal').style.display = 'flex';
+    }
+    
+    function closeModal(modalId) {
+        document.getElementById(modalId).style.display = 'none';
+    }
+    
+    // Inicialização
+    loadForum();
+    loadMissing();
+    
+    window.onclick = function(event) {
+        if (event.target.classList.contains('modal')) {
+            event.target.style.display = 'none';
+        }
+    }
+</script>
+</body>
+</html>
