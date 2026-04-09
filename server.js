@@ -5,6 +5,7 @@ const cors = require('cors');
 const socketIo = require('socket.io');
 const http = require('http');
 const session = require('express-session');
+const path = require('path');
 
 const app = express();
 const server = http.createServer(app);
@@ -20,30 +21,34 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
 app.use(session({
-    secret: 'rpg_campaign_secret_key_2024',
+    secret: process.env.SESSION_SECRET || 'rpg_secret_key_2024',
     resave: false,
     saveUninitialized: true,
     cookie: { secure: false }
 }));
 
-// Configuração do banco de dados MySQL (use ClearDB ou similar)
+// Conexão com TiDB Cloud
 const db = mysql.createConnection({
-    host: 'sql.freedb.tech',  // Altere para seu host
-    user: 'seu_usuario',
-    password: 'sua_senha',
-    database: 'seu_banco',
-    port: 3306
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME || 'rede_veu_livre',
+    port: 4000,
+    ssl: {
+        minVersion: 'TLSv1.2',
+        rejectUnauthorized: true
+    }
 });
 
 db.connect((err) => {
     if (err) {
-        console.error('Erro ao conectar ao banco:', err);
-        return;
+        console.error('❌ Erro ao conectar ao TiDB:', err.message);
+        process.exit(1);
     }
-    console.log('Conectado ao MySQL');
+    console.log('✅ Conectado ao TiDB Cloud com sucesso!');
 });
 
-// ============ SOCKET.IO - CHAT EM TEMPO REAL ============
+// ============ SOCKET.IO - CHAT ============
 io.use((socket, next) => {
     const username = socket.handshake.auth.username;
     if (!username) {
@@ -54,9 +59,9 @@ io.use((socket, next) => {
 });
 
 io.on('connection', (socket) => {
-    console.log(`Usuário conectado: ${socket.username}`);
+    console.log(`📡 Usuário conectado: ${socket.username}`);
     
-    // Enviar histórico de mensagens
+    // Enviar histórico
     db.query('SELECT sender, message, timestamp FROM chat_messages ORDER BY timestamp DESC LIMIT 50', 
         (err, results) => {
             if (!err && results) {
@@ -65,10 +70,8 @@ io.on('connection', (socket) => {
         }
     );
     
-    // Broadcast de novo usuário
     socket.broadcast.emit('user joined', `${socket.username} entrou no chat`);
     
-    // Receber mensagem
     socket.on('chat message', (data) => {
         const message = {
             sender: socket.username,
@@ -76,7 +79,6 @@ io.on('connection', (socket) => {
             timestamp: new Date()
         };
         
-        // Salvar no banco
         db.query('INSERT INTO chat_messages (sender, message) VALUES (?, ?)',
             [socket.username, data.message], (err) => {
                 if (!err) {
@@ -93,20 +95,7 @@ io.on('connection', (socket) => {
 
 // ============ ROTAS DA API ============
 
-// Login/Cadastro
-app.post('/api/register', async (req, res) => {
-    const { username, password } = req.body;
-    const hashedPassword = await bcrypt.hash(password, 10);
-    
-    db.query('INSERT INTO users (username, password) VALUES (?, ?)',
-        [username, hashedPassword], (err) => {
-            if (err) {
-                return res.status(400).json({ error: 'Usuário já existe' });
-            }
-            res.json({ success: true });
-        });
-});
-
+// Login
 app.post('/api/login', (req, res) => {
     const { username, password } = req.body;
     
@@ -125,7 +114,27 @@ app.post('/api/login', (req, res) => {
     });
 });
 
-// Fórum - Listar posts
+// Registro
+app.post('/api/register', async (req, res) => {
+    const { username, password } = req.body;
+    const hashedPassword = await bcrypt.hash(password, 10);
+    
+    db.query('INSERT INTO users (username, password) VALUES (?, ?)',
+        [username, hashedPassword], (err) => {
+            if (err) {
+                return res.status(400).json({ error: 'Usuário já existe' });
+            }
+            res.json({ success: true });
+        });
+});
+
+// Logout
+app.post('/api/logout', (req, res) => {
+    req.session.destroy();
+    res.json({ success: true });
+});
+
+// Posts do fórum
 app.get('/api/posts', (req, res) => {
     db.query('SELECT * FROM forum_posts WHERE deleted = FALSE ORDER BY CASE WHEN type = "ajuda" THEN 0 ELSE 1 END, created_at DESC',
         (err, results) => {
@@ -134,7 +143,6 @@ app.get('/api/posts', (req, res) => {
         });
 });
 
-// Criar post
 app.post('/api/posts', (req, res) => {
     if (!req.session.user) return res.status(401).json({ error: 'Não logado' });
     
@@ -150,7 +158,7 @@ app.post('/api/posts', (req, res) => {
 app.get('/api/comments/:postId', (req, res) => {
     db.query('SELECT * FROM comments WHERE post_id = ? ORDER BY created_at ASC',
         [req.params.postId], (err, results) => {
-            res.json(results);
+            res.json(results || []);
         });
 });
 
@@ -168,7 +176,7 @@ app.post('/api/comments', (req, res) => {
 // Desaparecidos
 app.get('/api/missing', (req, res) => {
     db.query('SELECT * FROM missing_persons ORDER BY created_at DESC', (err, results) => {
-        res.json(results);
+        res.json(results || []);
     });
 });
 
@@ -178,6 +186,7 @@ app.post('/api/missing', (req, res) => {
     const { name, age, location, description } = req.body;
     db.query('INSERT INTO missing_persons (name, age, location, description, created_by) VALUES (?, ?, ?, ?, ?)',
         [name, age, location, description, req.session.user], (err) => {
+            if (err) return res.status(500).json({ error: err.message });
             res.json({ success: true });
         });
 });
@@ -185,7 +194,7 @@ app.post('/api/missing', (req, res) => {
 // Estados
 app.get('/api/states', (req, res) => {
     db.query('SELECT * FROM states_info', (err, results) => {
-        res.json(results);
+        res.json(results || []);
     });
 });
 
@@ -195,18 +204,12 @@ app.get('/api/state/:uf', (req, res) => {
     });
 });
 
-// Logout
-app.post('/api/logout', (req, res) => {
-    req.session.destroy();
-    res.json({ success: true });
-});
-
-// Servir arquivos estáticos
+// Servir frontend
 app.get('*', (req, res) => {
-    res.sendFile(__dirname + '/public/index.html');
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-    console.log(`Servidor rodando na porta ${PORT}`);
+    console.log(`🚀 Servidor rodando na porta ${PORT}`);
 });
