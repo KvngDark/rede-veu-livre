@@ -1,21 +1,17 @@
 {
   "name": "rede-veu-livre",
   "version": "1.0.0",
-  "description": "Sistema para campanha de RPG pós-apocalíptico",
+  "description": "Sistema de resistência pós-apocalíptico",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
   "dependencies": {
+    "express": "^4.18.2",
+    "socket.io": "^4.5.4",
+    "mysql2": "^3.6.0",
     "bcryptjs": "^2.4.3",
-    "cors": "^2.8.6",
-    "express": "^4.22.1",
-    "express-session": "^1.19.0",
-    "mysql2": "^3.21.0",
-    "socket.io": "^4.8.3"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs"
+    "cors": "^2.8.5",
+    "express-session": "^1.17.3"
+  }
 }
