@@ -3,16 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>REDE VÉU LIVRE - Sistema de Resistência</title>
+    <title>REDE VÉU LIVRE - Resistência</title>
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             background: linear-gradient(135deg, #0a0a0a 0%, #1a0a2e 100%);
             color: #b0b0b0;
@@ -20,8 +15,6 @@
             padding: 10px;
             min-height: 100vh;
         }
-
-        /* Mobile First - Design Responsivo */
         .container {
             max-width: 1400px;
             margin: 0 auto;
@@ -30,267 +23,49 @@
             border-radius: 10px;
             padding: 15px;
         }
-
-        /* Header */
-        .header {
-            text-align: center;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 2px solid #6a0dad;
-        }
-
-        .header h1 {
-            color: #9b30ff;
-            font-size: 1.8em;
-            text-shadow: 2px 2px 0 #4a0e4e;
-        }
-
-        .subtitulo {
-            color: #ff3366;
-            font-size: 0.9em;
-            margin-top: 5px;
-        }
-
-        /* Navegação Mobile */
-        .nav-tabs {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-bottom: 20px;
-            justify-content: center;
-        }
-
+        .header { text-align: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px solid #6a0dad; }
+        .header h1 { color: #9b30ff; font-size: 1.8em; text-shadow: 2px 2px 0 #4a0e4e; }
+        .subtitulo { color: #ff3366; font-size: 0.9em; margin-top: 5px; }
+        .nav-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; justify-content: center; }
         .tab-btn {
-            background: #1a1a2e;
-            color: #9b30ff;
-            border: 1px solid #6a0dad;
-            padding: 10px 15px;
-            cursor: pointer;
-            border-radius: 5px;
-            font-family: monospace;
-            font-size: 0.9em;
-            transition: all 0.3s;
-            flex: 1;
-            min-width: 80px;
-            text-align: center;
+            background: #1a1a2e; color: #9b30ff; border: 1px solid #6a0dad;
+            padding: 10px 15px; cursor: pointer; border-radius: 5px;
+            font-family: monospace; font-size: 0.9em; transition: all 0.3s;
+            flex: 1; min-width: 80px; text-align: center;
         }
-
-        .tab-btn.active {
-            background: #6a0dad;
-            color: white;
-            border-color: #ff3366;
-        }
-
-        .tab-btn:hover {
-            transform: translateY(-2px);
-            background: #2a0a3e;
-        }
-
-        /* Páginas */
-        .page {
-            display: none;
-            animation: fadeIn 0.3s;
-        }
-
-        .page.active {
-            display: block;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* Status do Usuário */
-        .user-status {
-            background: #0a0a0a;
-            padding: 10px;
-            margin-bottom: 15px;
-            border-radius: 5px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-
-        /* Chat */
-        .chat-container {
-            display: flex;
-            flex-direction: column;
-            height: 500px;
-            background: #0a0a0a;
-            border: 1px solid #4a0e4e;
-            border-radius: 5px;
-        }
-
-        .chat-messages {
-            flex: 1;
-            overflow-y: auto;
-            padding: 15px;
-        }
-
-        .message {
-            margin-bottom: 10px;
-            padding: 8px;
-            background: #1a1a2e;
-            border-radius: 5px;
-            word-wrap: break-word;
-        }
-
-        .message strong {
-            color: #9b30ff;
-        }
-
-        .message small {
-            font-size: 0.7em;
-            color: #666;
-        }
-
-        .chat-input-area {
-            display: flex;
-            padding: 10px;
-            gap: 10px;
-            border-top: 1px solid #4a0e4e;
-        }
-
-        .chat-input-area input {
-            flex: 1;
-            padding: 10px;
-            background: #0a0a0a;
-            border: 1px solid #6a0dad;
-            color: white;
-            border-radius: 5px;
-        }
-
-        /* Posts do Fórum */
-        .post {
-            background: #0f0f1a;
-            margin-bottom: 15px;
-            padding: 15px;
-            border-radius: 5px;
-            border-left: 4px solid;
-        }
-
+        .tab-btn.active { background: #6a0dad; color: white; border-color: #ff3366; }
+        .tab-btn:hover { transform: translateY(-2px); background: #2a0a3e; }
+        .page { display: none; animation: fadeIn 0.3s; }
+        .page.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .user-status { background: #0a0a0a; padding: 10px; margin-bottom: 15px; border-radius: 5px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+        .chat-container { display: flex; flex-direction: column; height: 500px; background: #0a0a0a; border: 1px solid #4a0e4e; border-radius: 5px; }
+        .chat-messages { flex: 1; overflow-y: auto; padding: 15px; }
+        .message { margin-bottom: 10px; padding: 8px; background: #1a1a2e; border-radius: 5px; word-wrap: break-word; }
+        .message strong { color: #9b30ff; }
+        .message small { font-size: 0.7em; color: #666; }
+        .chat-input-area { display: flex; padding: 10px; gap: 10px; border-top: 1px solid #4a0e4e; }
+        .chat-input-area input { flex: 1; padding: 10px; background: #0a0a0a; border: 1px solid #6a0dad; color: white; border-radius: 5px; }
+        .post { background: #0f0f1a; margin-bottom: 15px; padding: 15px; border-radius: 5px; border-left: 4px solid; }
         .post.alerta { border-left-color: #ff0000; }
         .post.discussao { border-left-color: #ffcc00; }
         .post.relato { border-left-color: #00aaff; }
         .post.ajuda { border-left-color: #ff3366; background: #1a0a1a; }
-
-        /* Mapa Interativo */
-        .states-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-
-        .state-card {
-            background: #0f0f1a;
-            border: 1px solid #6a0dad;
-            padding: 10px;
-            border-radius: 5px;
-            cursor: pointer;
-            text-align: center;
-            transition: all 0.3s;
-        }
-
-        .state-card:hover {
-            transform: translateY(-3px);
-            background: #1a1a2e;
-        }
-
+        .states-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin-bottom: 20px; }
+        .state-card { background: #0f0f1a; border: 1px solid #6a0dad; padding: 10px; border-radius: 5px; cursor: pointer; text-align: center; transition: all 0.3s; }
+        .state-card:hover { transform: translateY(-3px); background: #1a1a2e; }
         .state-card.alta { border-left: 4px solid #00ff00; }
         .state-card.media { border-left: 4px solid #ff9800; }
         .state-card.baixa { border-left: 4px solid #ff0000; }
-
-        .state-info-panel {
-            background: #0a0a0a;
-            padding: 15px;
-            border-radius: 5px;
-            margin-top: 15px;
-        }
-
-        /* Formulários */
-        .form-group {
-            margin-bottom: 15px;
-        }
-
-        input, textarea, select {
-            width: 100%;
-            padding: 10px;
-            background: #0a0a0a;
-            border: 1px solid #6a0dad;
-            color: white;
-            border-radius: 5px;
-            font-family: monospace;
-        }
-
-        button {
-            background: #6a0dad;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-family: monospace;
-            transition: all 0.3s;
-        }
-
-        button:hover {
-            background: #9b30ff;
-            transform: translateY(-2px);
-        }
-
-        /* Modal */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.95);
-            z-index: 1000;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
-
-        .modal-content {
-            background: #0a0a0a;
-            border: 2px solid #6a0dad;
-            padding: 20px;
-            border-radius: 10px;
-            max-width: 500px;
-            width: 100%;
-            max-height: 90vh;
-            overflow-y: auto;
-        }
-
-        /* Alertas */
-        .alert-banner {
-            background: #1a0a0a;
-            border-left: 4px solid #ff3366;
-            padding: 10px;
-            margin: 10px 0;
-            font-size: 0.9em;
-        }
-
-        @media (max-width: 768px) {
-            .container {
-                padding: 10px;
-            }
-            
-            .tab-btn {
-                font-size: 0.8em;
-                padding: 8px 10px;
-            }
-            
-            .states-grid {
-                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-            }
-        }
+        .state-info-panel { background: #0a0a0a; padding: 15px; border-radius: 5px; margin-top: 15px; }
+        .form-group { margin-bottom: 15px; }
+        input, textarea, select { width: 100%; padding: 10px; background: #0a0a0a; border: 1px solid #6a0dad; color: white; border-radius: 5px; font-family: monospace; }
+        button { background: #6a0dad; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-family: monospace; transition: all 0.3s; }
+        button:hover { background: #9b30ff; transform: translateY(-2px); }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 1000; justify-content: center; align-items: center; padding: 20px; }
+        .modal-content { background: #0a0a0a; border: 2px solid #6a0dad; padding: 20px; border-radius: 10px; max-width: 500px; width: 100%; max-height: 90vh; overflow-y: auto; }
+        .alert-banner { background: #1a0a0a; border-left: 4px solid #ff3366; padding: 10px; margin: 10px 0; font-size: 0.9em; }
+        @media (max-width: 768px) { .container { padding: 10px; } .tab-btn { font-size: 0.8em; padding: 8px 10px; } }
     </style>
 </head>
 <body>
@@ -317,7 +92,6 @@
         <button class="tab-btn" onclick="switchPage('missing')">📋 Desaparecidos</button>
     </div>
 
-    <!-- Página Inicial -->
     <div id="home" class="page active">
         <h2>Bem-vindo à Resistência</h2>
         <p>Somos a REDE VÉU LIVRE, liderados por Rian Gomes. Lutamos contra o culto "Última Correção" que busca "corrigir" a humanidade.</p>
@@ -325,19 +99,14 @@
         <div class="alert-banner" style="margin-top: 20px;">
             🔴 ÚLTIMA HORA: Atividade paranormal detectada no Setor Sul. Evite a região!
         </div>
-        <div class="alert-banner">
-            🩸 Posto de suprimentos na Zona Leste - Senha: "O véu caiu"
-        </div>
     </div>
 
-    <!-- Fórum -->
     <div id="forum" class="page">
         <h2>Fórum de Resistência</h2>
         <button onclick="showNewPostModal()" style="margin-bottom: 15px;">+ Novo Post</button>
         <div id="postsContainer"></div>
     </div>
 
-    <!-- Mapa Interativo -->
     <div id="map" class="page">
         <h2>Mapa de Segurança - Brasil</h2>
         <div class="states-grid" id="statesGrid"></div>
@@ -346,7 +115,6 @@
         </div>
     </div>
 
-    <!-- Chat em Tempo Real -->
     <div id="chat" class="page">
         <h2>Chat da Resistência - Em Tempo Real</h2>
         <div class="chat-container">
@@ -359,7 +127,6 @@
         <div id="chatStatus" style="margin-top: 10px; font-size: 0.8em;"></div>
     </div>
 
-    <!-- Desaparecidos -->
     <div id="missing" class="page">
         <h2>Quadro de Desaparecidos</h2>
         <button onclick="showNewMissingModal()" style="margin-bottom: 15px;">+ Adicionar Pessoa</button>
@@ -367,7 +134,6 @@
     </div>
 </div>
 
-<!-- Modal Login -->
 <div id="loginModal" class="modal">
     <div class="modal-content">
         <h3>REDE VÉU LIVRE - Acesso</h3>
@@ -379,7 +145,6 @@
     </div>
 </div>
 
-<!-- Modal Novo Post -->
 <div id="postModal" class="modal">
     <div class="modal-content">
         <h3>Novo Post</h3>
@@ -396,7 +161,6 @@
     </div>
 </div>
 
-<!-- Modal Novo Desaparecido -->
 <div id="missingModal" class="modal">
     <div class="modal-content">
         <h3>Adicionar Desaparecido</h3>
@@ -410,44 +174,38 @@
 </div>
 
 <script>
-    // Variáveis globais
     let currentUser = null;
     let socket = null;
     let posts = [];
-    let missing = [];
-    let states = [];
 
-    // ============ SOCKET.IO - CHAT EM TEMPO REAL ============
+    // Verificar sessão ao carregar
+    async function checkSession() {
+        const response = await fetch('/api/session');
+        const data = await response.json();
+        if (data.user) {
+            currentUser = data.user;
+            document.getElementById('userStatus').innerHTML = `✅ Logado: ${currentUser} | <button onclick="logout()">Sair</button>`;
+            initSocket();
+        }
+    }
+
     function initSocket() {
         if (socket) socket.disconnect();
-        
-        socket = io({
-            auth: { username: currentUser }
-        });
+        socket = io({ auth: { username: currentUser } });
         
         socket.on('connect', () => {
-            document.getElementById('chatStatus').innerHTML = '✅ Conectado ao chat da resistência';
+            document.getElementById('chatStatus').innerHTML = '✅ Conectado ao chat';
         });
         
         socket.on('chat history', (messages) => {
             const container = document.getElementById('chatMessages');
             container.innerHTML = '';
-            messages.forEach(msg => {
-                addMessageToChat(msg.sender, msg.message, msg.timestamp);
-            });
+            messages.forEach(msg => addMessageToChat(msg.sender, msg.message, msg.timestamp));
         });
         
-        socket.on('chat message', (msg) => {
-            addMessageToChat(msg.sender, msg.message, msg.timestamp);
-        });
-        
-        socket.on('user joined', (msg) => {
-            addSystemMessage(msg);
-        });
-        
-        socket.on('user left', (msg) => {
-            addSystemMessage(msg);
-        });
+        socket.on('chat message', (msg) => addMessageToChat(msg.sender, msg.message, msg.timestamp));
+        socket.on('user joined', (msg) => addSystemMessage(msg));
+        socket.on('user left', (msg) => addSystemMessage(msg));
     }
     
     function addMessageToChat(sender, message, timestamp) {
@@ -455,7 +213,7 @@
         const time = timestamp ? new Date(timestamp).toLocaleTimeString() : new Date().toLocaleTimeString();
         const div = document.createElement('div');
         div.className = 'message';
-        div.innerHTML = `<strong>${sender}:</strong> ${message}<br><small>${time}</small>`;
+        div.innerHTML = `<strong>${sender}:</strong> ${escapeHtml(message)}<br><small>${time}</small>`;
         container.appendChild(div);
         container.scrollTop = container.scrollHeight;
     }
@@ -466,7 +224,7 @@
         div.className = 'message';
         div.style.background = '#2a1a2e';
         div.style.fontStyle = 'italic';
-        div.innerHTML = `<em>🔔 ${msg}</em>`;
+        div.innerHTML = `<em>🔔 ${escapeHtml(msg)}</em>`;
         container.appendChild(div);
         container.scrollTop = container.scrollHeight;
     }
@@ -479,38 +237,31 @@
             return;
         }
         if (socket) {
-            socket.emit('chat message', { message: message });
+            socket.emit('chat message', { message });
             input.value = '';
         }
     }
 
-    // ============ API Calls ============
-    async function apiCall(url, method = 'GET', data = null) {
-        const options = {
-            method: method,
-            headers: { 'Content-Type': 'application/json' }
-        };
-        if (data) options.body = JSON.stringify(data);
-        
-        const response = await fetch(url, options);
-        return response.json();
-    }
-    
     async function login() {
         const username = document.getElementById('loginUser').value;
         const password = document.getElementById('loginPass').value;
         
-        const result = await apiCall('/api/login', 'POST', { username, password });
+        const response = await fetch('/api/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password })
+        });
+        
+        const result = await response.json();
         if (result.success) {
             currentUser = username;
             document.getElementById('userStatus').innerHTML = `✅ Logado: ${currentUser} | <button onclick="logout()">Sair</button>`;
             closeModal('loginModal');
             initSocket();
             loadForum();
-            loadMissing();
             alert(`Bem-vindo à resistência, ${username}`);
         } else {
-            alert('Erro no login: ' + result.error);
+            alert('Erro: ' + result.error);
         }
     }
     
@@ -518,7 +269,13 @@
         const username = document.getElementById('loginUser').value;
         const password = document.getElementById('loginPass').value;
         
-        const result = await apiCall('/api/register', 'POST', { username, password });
+        const response = await fetch('/api/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password })
+        });
+        
+        const result = await response.json();
         if (result.success) {
             alert('Conta criada! Faça login.');
         } else {
@@ -527,7 +284,7 @@
     }
     
     async function logout() {
-        await apiCall('/api/logout', 'POST');
+        await fetch('/api/logout', { method: 'POST' });
         currentUser = null;
         if (socket) socket.disconnect();
         document.getElementById('userStatus').innerHTML = '🔒 Não logado | <button onclick="showLoginModal()">Entrar</button>';
@@ -535,14 +292,15 @@
     }
     
     async function loadForum() {
-        const result = await apiCall('/api/posts');
-        posts = result;
+        const response = await fetch('/api/posts');
+        posts = await response.json();
         renderForum();
     }
     
     async function createPost() {
         if (!currentUser) {
             alert('Faça login primeiro');
+            showLoginModal();
             return;
         }
         
@@ -550,50 +308,75 @@
         const title = document.getElementById('postTitle').value;
         const content = document.getElementById('postContent').value;
         
-        const result = await apiCall('/api/posts', 'POST', { type, title, content });
+        if (!title || !content) {
+            alert('Preencha título e conteúdo!');
+            return;
+        }
+        
+        const response = await fetch('/api/posts', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ type, title, content })
+        });
+        
+        const result = await response.json();
         if (result.success) {
             closeModal('postModal');
-            loadForum();
             document.getElementById('postTitle').value = '';
             document.getElementById('postContent').value = '';
+            loadForum();
+            alert('Post criado com sucesso!');
         } else {
-            alert('Erro ao criar post');
+            alert('Erro: ' + (result.error || 'Não foi possível criar'));
         }
     }
     
     function renderForum() {
         const container = document.getElementById('postsContainer');
         if (!posts.length) {
-            container.innerHTML = '<p>Nenhum post ainda. Seja o primeiro a postar!</p>';
+            container.innerHTML = '<p>Nenhum post ainda. Seja o primeiro!</p>';
             return;
         }
         
         container.innerHTML = posts.map(post => `
             <div class="post ${post.type}">
-                <div class="post-header">
-                    <strong>${getTypeIcon(post.type)} ${post.author}</strong>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                    <strong>${getTypeIcon(post.type)} ${escapeHtml(post.author)}</strong>
                     <small>${new Date(post.created_at).toLocaleString()}</small>
                 </div>
-                <h3>${post.title}</h3>
-                <p>${post.content}</p>
-                <button onclick="loadComments(${post.id})">💬 Comentar</button>
-                <div id="comments-${post.id}"></div>
+                <h3>${escapeHtml(post.title)}</h3>
+                <p>${escapeHtml(post.content)}</p>
+                <button onclick="toggleComments(${post.id})">💬 Comentar</button>
+                <div id="comments-${post.id}" style="display: none; margin-top: 10px;"></div>
             </div>
         `).join('');
     }
     
-    async function loadComments(postId) {
-        const comments = await apiCall(`/api/comments/${postId}`);
+    async function toggleComments(postId) {
         const container = document.getElementById(`comments-${postId}`);
-        if (!container) return;
+        if (container.style.display === 'none') {
+            container.style.display = 'block';
+            await loadComments(postId);
+        } else {
+            container.style.display = 'none';
+        }
+    }
+    
+    async function loadComments(postId) {
+        const response = await fetch(`/api/comments/${postId}`);
+        const comments = await response.json();
         
+        const container = document.getElementById(`comments-${postId}`);
         container.innerHTML = `
+            <textarea id="comment-${postId}" placeholder="Seu comentário..." rows="2" style="width: 100%; margin-bottom: 5px;"></textarea>
+            <button onclick="addComment(${postId})">Enviar</button>
             <div style="margin-top: 10px;">
-                <textarea id="comment-${postId}" placeholder="Seu comentário..." rows="2" style="width: 100%;"></textarea>
-                <button onclick="addComment(${postId})">Enviar</button>
-                <div style="margin-top: 10px;">
-                    ${comments.map(c => `<div style="background: #0a0a0a; padding: 5px; margin: 5px 0;"><strong>${c.author}:</strong> ${c.content}<br><small>${new Date(c.created_at).toLocaleString()}</small></div>`).join('')}
-                </div>
+                ${comments.map(c => `
+                    <div style="background: #0a0a0a; padding: 8px; margin: 5px 0; border-radius: 5px;">
+                        <strong>${escapeHtml(c.author)}:</strong> ${escapeHtml(c.content)}<br>
+                        <small>${new Date(c.created_at).toLocaleString()}</small>
+                    </div>
+                `).join('')}
             </div>
         `;
     }
@@ -601,79 +384,61 @@
     async function addComment(postId) {
         if (!currentUser) {
             alert('Faça login para comentar');
+            showLoginModal();
             return;
         }
-        const content = document.getElementById(`comment-${postId}`).value;
-        if (!content) return;
         
-        await apiCall('/api/comments', 'POST', { postId, content });
-        loadComments(postId);
+        const content = document.getElementById(`comment-${postId}`).value;
+        if (!content.trim()) return;
+        
+        const response = await fetch('/api/comments', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ postId, content })
+        });
+        
+        const result = await response.json();
+        if (result.success) {
+            document.getElementById(`comment-${postId}`).value = '';
+            loadComments(postId);
+        }
     }
     
-    // Mapa
     async function loadStates() {
-        const result = await apiCall('/api/states');
-        states = result;
-        renderStates();
-    }
-    
-    function renderStates() {
+        const response = await fetch('/api/states');
+        const states = await response.json();
+        
         const container = document.getElementById('statesGrid');
         container.innerHTML = states.map(state => `
             <div class="state-card ${state.safety.toLowerCase()}" onclick="showStateInfo('${state.uf}')">
-                <strong>${state.uf}</strong><br>
-                ${state.name}<br>
+                <strong>${state.uf}</strong><br>${state.name}<br>
                 <small>Segurança: ${state.safety}</small>
             </div>
         `).join('');
     }
     
     async function showStateInfo(uf) {
-        const state = await apiCall(`/api/state/${uf}`);
+        const response = await fetch(`/api/state/${uf}`);
+        const state = await response.json();
         const panel = document.getElementById('stateInfoPanel');
+        
         if (state) {
             let safetyColor = state.safety === 'Alta' ? '#00ff00' : (state.safety === 'Média' ? '#ff9800' : '#ff0000');
             panel.innerHTML = `
                 <h3>${state.name} (${state.uf})</h3>
                 <p><strong>População:</strong> ${state.population}</p>
                 <p><strong>Status:</strong> ${state.status}</p>
-                <p><strong>Grupos Dominantes:</strong> ${state.dominant_groups}</p>
+                <p><strong>Grupos Dominantes:</strong> ${state.groups}</p>
                 <p><strong>Recomendação:</strong> ${state.recommendation}</p>
-                <p style="color: ${safetyColor};"><strong>Nível de Segurança:</strong> ${state.safety}</p>
+                <p style="color: ${safetyColor};"><strong>Segurança:</strong> ${state.safety}</p>
             `;
         }
     }
     
-    // Desaparecidos
     async function loadMissing() {
-        const result = await apiCall('/api/missing');
-        missing = result;
-        renderMissing();
-    }
-    
-    async function addMissing() {
-        if (!currentUser) {
-            alert('Faça login primeiro');
-            return;
-        }
+        const response = await fetch('/api/missing');
+        const missing = await response.json();
         
-        const name = document.getElementById('missingName').value;
-        const age = document.getElementById('missingAge').value;
-        const location = document.getElementById('missingLocation').value;
-        const description = document.getElementById('missingDesc').value;
-        
-        const result = await apiCall('/api/missing', 'POST', { name, age, location, description });
-        if (result.success) {
-            closeModal('missingModal');
-            loadMissing();
-            document.getElementById('missingName').value = '';
-            document.getElementById('missingAge').value = '';
-            document.getElementById('missingLocation').value = '';
-            document.getElementById('missingDesc').value = '';
-        }
-    }
-    
-    function renderMissing() {
         const container = document.getElementById('missingContainer');
         if (!missing.length) {
             container.innerHTML = '<p>Nenhum desaparecido registrado.</p>';
@@ -682,14 +447,44 @@
         
         container.innerHTML = missing.map(person => `
             <div class="post" style="border-left-color: #ff3366;">
-                <h3>${person.name}</h3>
+                <h3>${escapeHtml(person.name)}</h3>
                 <p><strong>Idade:</strong> ${person.age || '?'}</p>
-                <p><strong>Último local:</strong> ${person.location}</p>
-                <p><strong>Descrição:</strong> ${person.description}</p>
+                <p><strong>Local:</strong> ${escapeHtml(person.location)}</p>
+                <p><strong>Descrição:</strong> ${escapeHtml(person.description)}</p>
                 <p><strong>Status:</strong> ${person.status}</p>
                 <small>Reportado por: ${person.created_by}</small>
             </div>
         `).join('');
+    }
+    
+    async function addMissing() {
+        if (!currentUser) {
+            alert('Faça login primeiro');
+            showLoginModal();
+            return;
+        }
+        
+        const name = document.getElementById('missingName').value;
+        const age = document.getElementById('missingAge').value;
+        const location = document.getElementById('missingLocation').value;
+        const description = document.getElementById('missingDesc').value;
+        
+        const response = await fetch('/api/missing', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, age, location, description })
+        });
+        
+        const result = await response.json();
+        if (result.success) {
+            closeModal('missingModal');
+            loadMissing();
+            document.getElementById('missingName').value = '';
+            document.getElementById('missingAge').value = '';
+            document.getElementById('missingLocation').value = '';
+            document.getElementById('missingDesc').value = '';
+            alert('Pessoa adicionada!');
+        }
     }
     
     function getTypeIcon(type) {
@@ -697,54 +492,39 @@
         return icons[type] || '📝';
     }
     
-    // UI Helpers
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    
     function switchPage(pageId) {
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         document.getElementById(pageId).classList.add('active');
-        
-        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-        event.target.classList.add('active');
         
         if (pageId === 'forum') loadForum();
         if (pageId === 'missing') loadMissing();
         if (pageId === 'map') loadStates();
     }
     
-    function showLoginModal() {
-        document.getElementById('loginModal').style.display = 'flex';
-    }
-    
+    function showLoginModal() { document.getElementById('loginModal').style.display = 'flex'; }
     function showNewPostModal() {
-        if (!currentUser) {
-            alert('Faça login para postar');
-            showLoginModal();
-            return;
-        }
+        if (!currentUser) { alert('Faça login para postar'); showLoginModal(); return; }
         document.getElementById('postModal').style.display = 'flex';
     }
-    
     function showNewMissingModal() {
-        if (!currentUser) {
-            alert('Faça login para adicionar');
-            showLoginModal();
-            return;
-        }
+        if (!currentUser) { alert('Faça login para adicionar'); showLoginModal(); return; }
         document.getElementById('missingModal').style.display = 'flex';
     }
-    
-    function closeModal(modalId) {
-        document.getElementById(modalId).style.display = 'none';
-    }
-    
-    // Inicialização
-    loadForum();
-    loadMissing();
+    function closeModal(modalId) { document.getElementById(modalId).style.display = 'none'; }
     
     window.onclick = function(event) {
-        if (event.target.classList.contains('modal')) {
-            event.target.style.display = 'none';
-        }
+        if (event.target.classList.contains('modal')) event.target.style.display = 'none';
     }
+    
+    checkSession();
+    loadForum();
+    loadMissing();
 </script>
 </body>
 </html>
