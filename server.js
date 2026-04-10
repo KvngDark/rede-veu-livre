@@ -10,14 +10,14 @@ const path = require('path');
 const app = express();
 const server = http.createServer(app);
 
-// ============ CONFIGURAÇÃO DO SOCKET.IO PARA RENDER ============
+// Configuração do Socket.IO para funcionar no Render
 const io = socketIo(server, {
     cors: {
         origin: "*",
         methods: ["GET", "POST"],
         credentials: true
     },
-    transports: ['polling', 'websocket'], // Primeiro polling, depois websocket
+    transports: ['polling', 'websocket'],
     allowEIO3: true,
     pingTimeout: 60000,
     pingInterval: 25000,
@@ -36,7 +36,7 @@ app.use(session({
     secret: process.env.SESSION_SECRET || 'rpg_secret_key_2024',
     resave: false,
     saveUninitialized: true,
-    cookie: { secure: false, maxAge: 7 * 24 * 60 * 60 * 1000 } // 7 dias
+    cookie: { secure: false, maxAge: 7 * 24 * 60 * 60 * 1000 }
 }));
 
 // Middleware para logging
@@ -45,7 +45,7 @@ app.use((req, res, next) => {
     next();
 });
 
-// ============ CONEXÃO COM TiDB CLOUD ============
+// Conexão com TiDB Cloud
 const db = mysql.createConnection({
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
@@ -59,21 +59,21 @@ const db = mysql.createConnection({
 
 db.connect((err) => {
     if (err) {
-        console.error('❌ Erro ao conectar ao TiDB:', err.message);
+        console.error('Erro ao conectar ao TiDB:', err.message);
         setTimeout(() => {
-            console.log('🔄 Tentando reconectar...');
+            console.log('Tentando reconectar...');
             db.connect();
         }, 5000);
         return;
     }
-    console.log('✅ Conectado ao TiDB Cloud com sucesso!');
+    console.log('Conectado ao TiDB Cloud com sucesso!');
     criarTabelas();
 });
 
 // Keep connection alive
 setInterval(() => {
     db.query('SELECT 1', (err) => {
-        if (err) console.log('⚠️ Keepalive query failed');
+        if (err) console.log('Keepalive query failed');
     });
 }, 30000);
 
@@ -153,7 +153,7 @@ function criarTabelas() {
         if (err) {
             console.error('Erro ao criar tabelas:', err);
         } else {
-            console.log('✅ Tabelas criadas/verificadas');
+            console.log('Tabelas criadas/verificadas');
             criarAdmin();
             criarEstadosIniciais();
         }
@@ -166,13 +166,13 @@ function criarAdmin() {
         
         if (results && results.length > 0) {
             db.query('UPDATE users SET password = ?, is_admin = TRUE, character_name = ? WHERE username = ?',
-                [hash, '👑 Rian Gomes - Fundador', 'RianGomes'], (err) => {
-                    if (!err) console.log('✅ Admin RianGomes atualizado');
+                [hash, 'Rian Gomes - Fundador', 'RianGomes'], (err) => {
+                    if (!err) console.log('Admin RianGomes atualizado');
                 });
         } else {
             db.query('INSERT INTO users (username, password, character_name, is_admin) VALUES (?, ?, ?, ?)',
-                ['RianGomes', hash, '👑 Rian Gomes - Fundador', true], (err) => {
-                    if (!err) console.log('✅ Admin RianGomes criado');
+                ['RianGomes', hash, 'Rian Gomes - Fundador', true], (err) => {
+                    if (!err) console.log('Admin RianGomes criado');
                 });
         }
     });
@@ -180,14 +180,14 @@ function criarAdmin() {
 
 function criarEstadosIniciais() {
     const estados = [
-        ['SP', 'São Paulo', '~46.649.130', 'Megacidade com alta atividade anormal', 'ONG "Mãos Dadas" controla o caos', 'Alta', 'O Santuário na Liberdade oferece proteção completa'],
-        ['RJ', 'Rio de Janeiro', '~17.463.350', 'Caos urbano com facções se difundindo', 'Facções dominam todo o estado', 'Baixa', 'Evite áreas de risco, Zona Sul é mais segura'],
-        ['MG', 'Minas Gerais', '~21.411.920', 'Locais históricos sendo alvos de grupos', 'Grupo "O Olho" domina a região', 'Média', 'Belo Horizonte é relativamente segura'],
-        ['RS', 'Rio Grande do Sul', '~11.466.630', 'Pampas com matilhas gaúchas', 'Lobisomens dominam Porto Alegre', 'Alta', 'Evite noites de lua cheia'],
-        ['BA', 'Bahia', '~14.985.280', 'Litoral e interior em alerta', 'Místicos do Candomblé dominam Salvador', 'Média', 'Evite cemitérios'],
-        ['PE', 'Pernambuco', '~9.674.790', 'Área costeira irregular', '"Transtornados" andam por Recife', 'Baixa', 'Não ande sozinho'],
-        ['AM', 'Amazonas', '~4.270.000', 'Alta atividade na selva', 'Tribos indígenas em purificação', 'Baixa', 'Não entre na floresta sem guias'],
-        ['DF', 'Distrito Federal', '~3.094.330', 'Sede do governo', 'Governo controla a região', 'Alta', 'Entrada permitida apenas para cidadãos']
+        ['SP', 'Sao Paulo', '~46.649.130', 'Megacidade com alta atividade anormal', 'ONG "Maos Dadas" controla o caos', 'Alta', 'O Santuario na Liberdade oferece protecao completa'],
+        ['RJ', 'Rio de Janeiro', '~17.463.350', 'Caos urbano com faccoes se difundindo', 'Faccoes dominam todo o estado', 'Baixa', 'Evite areas de risco, Zona Sul e mais segura'],
+        ['MG', 'Minas Gerais', '~21.411.920', 'Locais historicos sendo alvos de grupos', 'Grupo "O Olho" domina a regiao', 'Media', 'Belo Horizonte e relativamente segura'],
+        ['RS', 'Rio Grande do Sul', '~11.466.630', 'Pampas com matilhas gauchas', 'Lobisomens dominam Porto Alegre', 'Alta', 'Evite noites de lua cheia'],
+        ['BA', 'Bahia', '~14.985.280', 'Litoral e interior em alerta', 'Misticos do Candomble dominam Salvador', 'Media', 'Evite cemiterios'],
+        ['PE', 'Pernambuco', '~9.674.790', 'Area costeira irregular', '"Transtornados" andam por Recife', 'Baixa', 'Nao ande sozinho'],
+        ['AM', 'Amazonas', '~4.270.000', 'Alta atividade na selva', 'Tribos indigenas em purificacao', 'Baixa', 'Nao entre na floresta sem guias'],
+        ['DF', 'Distrito Federal', '~3.094.330', 'Sede do governo', 'Governo controla a regiao', 'Alta', 'Entrada permitida apenas para cidadaos']
     ];
     
     estados.forEach(e => {
@@ -195,18 +195,18 @@ function criarEstadosIniciais() {
     });
 }
 
-// ============ SOCKET.IO - CHAT PÚBLICO E PRIVADO ============
+// ============ SOCKET.IO - CHAT PUBLICO E PRIVADO ============
 io.use((socket, next) => {
     const username = socket.handshake.auth.username;
     if (!username) {
-        return next(new Error("Usuário não autenticado"));
+        return next(new Error("Usuario nao autenticado"));
     }
     socket.username = username;
     next();
 });
 
 io.on('connection', (socket) => {
-    console.log(`📡 Conectado: ${socket.username}`);
+    console.log(`Conectado: ${socket.username}`);
     
     // Carregar histórico do chat público
     db.query('SELECT sender, message, timestamp FROM chat_messages WHERE is_private = FALSE OR is_private IS NULL ORDER BY timestamp DESC LIMIT 50', 
@@ -274,7 +274,7 @@ io.on('connection', (socket) => {
 
 // Listar todos os usuários
 app.get('/api/users', (req, res) => {
-    if (!req.session.user) return res.status(401).json({ error: 'Não logado' });
+    if (!req.session.user) return res.status(401).json({ error: 'Nao logado' });
     
     db.query('SELECT username, character_name, is_admin FROM users WHERE username != ? ORDER BY username', 
         [req.session.user], (err, results) => {
@@ -293,7 +293,7 @@ app.get('/api/isAdmin', (req, res) => {
 
 // Tornar outro usuário admin
 app.post('/api/makeAdmin', (req, res) => {
-    if (!req.session.user) return res.status(401).json({ error: 'Não logado' });
+    if (!req.session.user) return res.status(401).json({ error: 'Nao logado' });
     
     db.query('SELECT is_admin FROM users WHERE username = ?', [req.session.user], (err, results) => {
         if (err || !results[0]?.is_admin) {
@@ -314,7 +314,7 @@ app.post('/api/login', (req, res) => {
     
     db.query('SELECT * FROM users WHERE username = ?', [username], async (err, results) => {
         if (err || results.length === 0) {
-            return res.status(401).json({ error: 'Usuário não encontrado' });
+            return res.status(401).json({ error: 'Usuario nao encontrado' });
         }
         
         const valid = await bcrypt.compare(password, results[0].password);
@@ -336,7 +336,7 @@ app.post('/api/register', async (req, res) => {
     }
     
     if (username.length < 3) {
-        return res.status(400).json({ error: 'Usuário deve ter pelo menos 3 caracteres' });
+        return res.status(400).json({ error: 'Usuario deve ter pelo menos 3 caracteres' });
     }
     
     if (password.length < 4) {
@@ -349,7 +349,7 @@ app.post('/api/register', async (req, res) => {
         }
         
         if (results && results.length > 0) {
-            return res.status(400).json({ error: `Usuário "${username}" já existe!` });
+            return res.status(400).json({ error: `Usuario "${username}" ja existe!` });
         }
         
         const isAdmin = (adminCode === 'ADMIN2024');
@@ -358,13 +358,13 @@ app.post('/api/register', async (req, res) => {
         db.query('INSERT INTO users (username, password, is_admin) VALUES (?, ?, ?)',
             [username, hashedPassword, isAdmin], (err, result) => {
                 if (err) {
-                    return res.status(500).json({ error: 'Erro ao criar usuário' });
+                    return res.status(500).json({ error: 'Erro ao criar usuario' });
                 }
                 
                 res.json({ 
                     success: true, 
                     isAdmin: isAdmin,
-                    message: isAdmin ? 'Admin criado com sucesso!' : 'Usuário criado com sucesso!'
+                    message: isAdmin ? 'Admin criado com sucesso!' : 'Usuario criado com sucesso!'
                 });
             });
     });
@@ -389,7 +389,7 @@ app.get('/api/posts', (req, res) => {
 // Criar post
 app.post('/api/posts', (req, res) => {
     if (!req.session.user) {
-        return res.status(401).json({ error: 'Faça login primeiro' });
+        return res.status(401).json({ error: 'Faca login primeiro' });
     }
     
     const { type, title, content } = req.body;
@@ -409,7 +409,7 @@ app.post('/api/posts', (req, res) => {
 
 // Deletar post (apenas admin)
 app.delete('/api/posts/:id', (req, res) => {
-    if (!req.session.user) return res.status(401).json({ error: 'Não logado' });
+    if (!req.session.user) return res.status(401).json({ error: 'Nao logado' });
     
     db.query('SELECT is_admin FROM users WHERE username = ?', [req.session.user], (err, results) => {
         if (err || !results[0]?.is_admin) {
@@ -426,7 +426,7 @@ app.delete('/api/posts/:id', (req, res) => {
 
 // Deletar desaparecido (apenas admin)
 app.delete('/api/missing/:id', (req, res) => {
-    if (!req.session.user) return res.status(401).json({ error: 'Não logado' });
+    if (!req.session.user) return res.status(401).json({ error: 'Nao logado' });
     
     db.query('SELECT is_admin FROM users WHERE username = ?', [req.session.user], (err, results) => {
         if (err || !results[0]?.is_admin) {
@@ -450,7 +450,7 @@ app.get('/api/comments/:postId', (req, res) => {
 
 app.post('/api/comments', (req, res) => {
     if (!req.session.user) {
-        return res.status(401).json({ error: 'Faça login primeiro' });
+        return res.status(401).json({ error: 'Faca login primeiro' });
     }
     
     const { postId, content } = req.body;
@@ -470,7 +470,7 @@ app.get('/api/missing', (req, res) => {
 });
 
 app.post('/api/missing', (req, res) => {
-    if (!req.session.user) return res.status(401).json({ error: 'Não logado' });
+    if (!req.session.user) return res.status(401).json({ error: 'Nao logado' });
     
     const { name, age, location, description } = req.body;
     db.query('INSERT INTO missing_persons (name, age, location, description, created_by) VALUES (?, ?, ?, ?, ?)',
@@ -513,5 +513,5 @@ app.get('*', (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-    console.log(`🚀 Servidor rodando na porta ${PORT}`);
+    console.log(`Servidor rodando na porta ${PORT}`);
 });
