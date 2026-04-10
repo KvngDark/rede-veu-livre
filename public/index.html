@@ -628,29 +628,76 @@
         }
     }
     
-    async function register() {
-        const username = document.getElementById('loginUser').value;
-        const password = document.getElementById('loginPass').value;
-        
+   async function register() {
+    const username = document.getElementById('loginUser').value;
+    const password = document.getElementById('loginPass').value;
+    
+    console.log('📝 Tentando registrar:', username);
+    
+    if (!username || !password) {
+        alert('Preencha todos os campos!');
+        return;
+    }
+    
+    try {
         const response = await fetch('/api/register', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username, password })
+            body: JSON.stringify({ username, password, adminCode: '' })
         });
         
         const result = await response.json();
+        console.log('📦 Resposta:', result);
+        
         if (result.success) {
-            alert('Conta criada! Faça login.');
+            alert('✅ Conta criada! Agora faça login.');
+            closeModal('loginModal');
+            document.getElementById('loginUser').value = '';
+            document.getElementById('loginPass').value = '';
         } else {
-            alert('Erro: ' + result.error);
+            alert('❌ Erro: ' + result.error);
         }
+    } catch (error) {
+        console.error('❌ Erro:', error);
+        alert('❌ Erro de conexão');
     }
+}
     
     async function registerAdmin() {
-        const username = document.getElementById('adminUsername').value;
-        const password = document.getElementById('adminPassword').value;
-        const adminCode = document.getElementById('adminCode').value;
-        
+    const username = document.getElementById('adminUsername').value;
+    const password = document.getElementById('adminPassword').value;
+    const adminCode = document.getElementById('adminCode').value;
+    
+    console.log('🔐 Tentando criar admin:', { username, adminCode });
+    
+    // Validações
+    if (!username || !password) {
+        alert('❌ Preencha todos os campos!');
+        return;
+    }
+    
+    if (username.length < 3) {
+        alert('❌ Usuário deve ter pelo menos 3 caracteres');
+        return;
+    }
+    
+    if (password.length < 4) {
+        alert('❌ Senha deve ter pelo menos 4 caracteres');
+        return;
+    }
+    
+    if (adminCode !== 'ADMIN2024') {
+        alert('❌ Código de admin inválido!');
+        return;
+    }
+    
+    // Mostrar loading
+    const btn = event.target;
+    const originalText = btn.innerText;
+    btn.innerText = '⏳ Criando...';
+    btn.disabled = true;
+    
+    try {
         const response = await fetch('/api/register', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -658,13 +705,25 @@
         });
         
         const result = await response.json();
+        console.log('📦 Resposta do servidor:', result);
+        
         if (result.success) {
-            alert(result.isAdmin ? 'Admin criado com sucesso!' : 'Usuário comum criado');
+            alert(result.isAdmin ? '✅ Admin criado com sucesso! Faça login.' : '✅ Usuário criado com sucesso!');
             closeModal('adminModal');
+            document.getElementById('adminUsername').value = '';
+            document.getElementById('adminPassword').value = '';
+            document.getElementById('adminCode').value = '';
         } else {
-            alert('Erro: ' + result.error);
+            alert('❌ Erro: ' + (result.error || 'Não foi possível criar o usuário'));
         }
+    } catch (error) {
+        console.error('❌ Erro de rede:', error);
+        alert('❌ Erro de conexão. Verifique se o servidor está rodando.');
+    } finally {
+        btn.innerText = originalText;
+        btn.disabled = false;
     }
+}
     
     async function makeAdmin() {
         const username = document.getElementById('makeAdminUser').value;
