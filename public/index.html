@@ -359,7 +359,7 @@
 
 <div id="adminModal" class="modal">
     <div class="modal-content">
-        <h3>👑 Área Administrativa</h3>
+        <h3> Área Administrativa</h3>
         <p>Criar novo administrador:</p>
         <input type="text" id="adminUsername" placeholder="Nome do usuário"><br><br>
         <input type="password" id="adminPassword" placeholder="Senha"><br><br>
@@ -418,7 +418,7 @@
         if (data.user) {
             currentUser = data.user;
             currentUserIsAdmin = data.isAdmin || false;
-            document.getElementById('userStatus').innerHTML = `✅ Logado: ${currentUser} ${currentUserIsAdmin ? '👑' : ''} | <button onclick="logout()">Sair</button>`;
+            document.getElementById('userStatus').innerHTML = `✅ Logado: ${currentUser} ${currentUserIsAdmin ? '' : ''} | <button onclick="logout()">Sair</button>`;
             initSocket();
             loadUsers();
         }
@@ -462,7 +462,7 @@
         container.innerHTML = users.map(user => `
             <div class="conversation-item" onclick="openPrivateChat('${user.username}')">
                 <div>
-                    <div class="conversation-name">${user.username} ${user.is_admin ? '👑' : ''}</div>
+                    <div class="conversation-name">${user.username} ${user.is_admin ? '' : ''}</div>
                     <div class="conversation-preview">${privateChats[user.username]?.preview || 'Clique para conversar'}</div>
                 </div>
                 ${unreadCounts[user.username] ? `<span class="unread-badge">${unreadCounts[user.username]}</span>` : ''}
