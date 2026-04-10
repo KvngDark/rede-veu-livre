@@ -9,42 +9,73 @@ const path = require('path');
 
 const app = express();
 const server = http.createServer(app);
+
+// ============ CONFIGURAÇÃO DO SOCKET.IO PARA RENDER ============
 const io = socketIo(server, {
     cors: {
         origin: "*",
-        methods: ["GET", "POST"]
-    }
+        methods: ["GET", "POST"],
+        credentials: true
+    },
+    transports: ['polling', 'websocket'], // Primeiro polling, depois websocket
+    allowEIO3: true,
+    pingTimeout: 60000,
+    pingInterval: 25000,
+    upgradeTimeout: 10000,
+    httpCompression: false
 });
 
 // Middleware
-app.use(cors());
+app.use(cors({
+    origin: "*",
+    credentials: true
+}));
 app.use(express.json());
 app.use(express.static('public'));
 app.use(session({
     secret: process.env.SESSION_SECRET || 'rpg_secret_key_2024',
     resave: false,
     saveUninitialized: true,
-    cookie: { secure: false }
+    cookie: { secure: false, maxAge: 7 * 24 * 60 * 60 * 1000 } // 7 dias
 }));
 
-// Conexão com TiDB Cloud
+// Middleware para logging
+app.use((req, res, next) => {
+    console.log(`${req.method} ${req.url}`);
+    next();
+});
+
+// ============ CONEXÃO COM TiDB CLOUD ============
 const db = mysql.createConnection({
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME || 'rede_veu_livre',
     port: 4000,
-    ssl: { rejectUnauthorized: false }
+    ssl: { rejectUnauthorized: false },
+    connectTimeout: 30000,
+    enableKeepAlive: true
 });
 
 db.connect((err) => {
     if (err) {
         console.error('❌ Erro ao conectar ao TiDB:', err.message);
-        process.exit(1);
+        setTimeout(() => {
+            console.log('🔄 Tentando reconectar...');
+            db.connect();
+        }, 5000);
+        return;
     }
     console.log('✅ Conectado ao TiDB Cloud com sucesso!');
     criarTabelas();
 });
+
+// Keep connection alive
+setInterval(() => {
+    db.query('SELECT 1', (err) => {
+        if (err) console.log('⚠️ Keepalive query failed');
+    });
+}, 30000);
 
 function criarTabelas() {
     const sqlTables = `
@@ -73,7 +104,6 @@ function criarTabelas() {
             author VARCHAR(50) NOT NULL,
             content TEXT NOT NULL,
             deleted BOOLEAN DEFAULT FALSE,
-            deleted_by VARCHAR(50),
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
         
@@ -179,7 +209,7 @@ io.on('connection', (socket) => {
     console.log(`📡 Conectado: ${socket.username}`);
     
     // Carregar histórico do chat público
-    db.query('SELECT sender, message, timestamp FROM chat_messages WHERE is_private = FALSE ORDER BY timestamp DESC LIMIT 50', 
+    db.query('SELECT sender, message, timestamp FROM chat_messages WHERE is_private = FALSE OR is_private IS NULL ORDER BY timestamp DESC LIMIT 50', 
         (err, results) => {
             if (!err && results) {
                 socket.emit('chat history', results.reverse());
@@ -197,7 +227,7 @@ io.on('connection', (socket) => {
             timestamp: new Date()
         };
         
-        db.query('INSERT INTO chat_messages (sender, message, is_private) VALUES (?, ?, FALSE)',
+        db.query('INSERT INTO chat_messages (sender, message) VALUES (?, ?)',
             [socket.username, data.message], (err) => {
                 if (!err) {
                     io.emit('chat message', message);
@@ -212,7 +242,6 @@ io.on('connection', (socket) => {
         db.query('INSERT INTO private_messages (from_user, to_user, message) VALUES (?, ?, ?)',
             [socket.username, to, message], (err) => {
                 if (!err) {
-                    // Notificar o destinatário se estiver online
                     io.to(to).emit('private message received', {
                         from: socket.username,
                         message: message,
@@ -236,12 +265,6 @@ io.on('connection', (socket) => {
             });
     });
     
-    // Marcar mensagens como lidas
-    socket.on('mark read', (data) => {
-        db.query('UPDATE private_messages SET is_read = TRUE WHERE to_user = ? AND from_user = ?',
-            [socket.username, data.from]);
-    });
-    
     socket.on('disconnect', () => {
         io.emit('user left', `${socket.username} saiu do chat`);
     });
@@ -249,7 +272,7 @@ io.on('connection', (socket) => {
 
 // ============ ROTAS DA API ============
 
-// Listar todos os usuários (para chat privado)
+// Listar todos os usuários
 app.get('/api/users', (req, res) => {
     if (!req.session.user) return res.status(401).json({ error: 'Não logado' });
     
@@ -268,7 +291,7 @@ app.get('/api/isAdmin', (req, res) => {
     });
 });
 
-// Tornar outro usuário admin (apenas admin pode fazer)
+// Tornar outro usuário admin
 app.post('/api/makeAdmin', (req, res) => {
     if (!req.session.user) return res.status(401).json({ error: 'Não logado' });
     
@@ -305,15 +328,10 @@ app.post('/api/login', (req, res) => {
 });
 
 // Registro
-// Registro - VERSÃO COMPLETAMENTE CORRIGIDA
 app.post('/api/register', async (req, res) => {
-    console.log('📝 Requisição de registro recebida:', req.body);
-    
     const { username, password, adminCode } = req.body;
     
-    // Validações básicas
     if (!username || !password) {
-        console.log('❌ Campos faltando:', { username, password });
         return res.status(400).json({ error: 'Preencha todos os campos' });
     }
     
@@ -325,50 +343,31 @@ app.post('/api/register', async (req, res) => {
         return res.status(400).json({ error: 'Senha deve ter pelo menos 4 caracteres' });
     }
     
-    try {
-        // Verificar se usuário já existe
-        db.query('SELECT * FROM users WHERE username = ?', [username], async (err, results) => {
-            if (err) {
-                console.error('❌ Erro na query:', err);
-                return res.status(500).json({ error: 'Erro no servidor' });
-            }
-            
-            console.log('📊 Resultado da busca:', results);
-            
-            if (results && results.length > 0) {
-                console.log('❌ Usuário já existe:', username);
-                return res.status(400).json({ error: `Usuário "${username}" já existe! Escolha outro nome.` });
-            }
-            
-            // Verificar código de admin (ADMIN2024)
-            const isAdmin = (adminCode === 'ADMIN2024');
-            console.log('👑 É admin?', isAdmin, 'Código recebido:', adminCode);
-            
-            // Gerar hash da senha
-            const hashedPassword = await bcrypt.hash(password, 10);
-            console.log('🔐 Hash gerado:', hashedPassword.substring(0, 20) + '...');
-            
-            // Inserir novo usuário
-            db.query('INSERT INTO users (username, password, is_admin) VALUES (?, ?, ?)',
-                [username, hashedPassword, isAdmin], (err, result) => {
-                    if (err) {
-                        console.error('❌ Erro ao inserir:', err);
-                        return res.status(500).json({ error: 'Erro ao criar usuário: ' + err.message });
-                    }
-                    
-                    console.log('✅ Usuário criado com sucesso! ID:', result.insertId);
-                    
-                    res.json({ 
-                        success: true, 
-                        isAdmin: isAdmin,
-                        message: isAdmin ? '✅ Admin criado com sucesso!' : '✅ Usuário criado com sucesso!'
-                    });
+    db.query('SELECT * FROM users WHERE username = ?', [username], async (err, results) => {
+        if (err) {
+            return res.status(500).json({ error: 'Erro no servidor' });
+        }
+        
+        if (results && results.length > 0) {
+            return res.status(400).json({ error: `Usuário "${username}" já existe!` });
+        }
+        
+        const isAdmin = (adminCode === 'ADMIN2024');
+        const hashedPassword = await bcrypt.hash(password, 10);
+        
+        db.query('INSERT INTO users (username, password, is_admin) VALUES (?, ?, ?)',
+            [username, hashedPassword, isAdmin], (err, result) => {
+                if (err) {
+                    return res.status(500).json({ error: 'Erro ao criar usuário' });
+                }
+                
+                res.json({ 
+                    success: true, 
+                    isAdmin: isAdmin,
+                    message: isAdmin ? 'Admin criado com sucesso!' : 'Usuário criado com sucesso!'
                 });
-        });
-    } catch (error) {
-        console.error('❌ Erro inesperado:', error);
-        res.status(500).json({ error: 'Erro interno do servidor' });
-    }
+            });
+    });
 });
 
 // Logout
@@ -402,7 +401,6 @@ app.post('/api/posts', (req, res) => {
     db.query('INSERT INTO forum_posts (type, title, author, content) VALUES (?, ?, ?, ?)',
         [type, title, req.session.user, content], (err, result) => {
             if (err) {
-                console.error('Erro ao criar post:', err);
                 return res.status(500).json({ error: 'Erro ao criar post' });
             }
             res.json({ success: true, postId: result.insertId });
@@ -418,8 +416,8 @@ app.delete('/api/posts/:id', (req, res) => {
             return res.status(403).json({ error: 'Apenas administradores podem deletar posts' });
         }
         
-        db.query('UPDATE forum_posts SET deleted = TRUE, deleted_by = ? WHERE id = ?',
-            [req.session.user, req.params.id], (err) => {
+        db.query('UPDATE forum_posts SET deleted = TRUE WHERE id = ?',
+            [req.params.id], (err) => {
                 if (err) return res.status(500).json({ error: err.message });
                 res.json({ success: true });
             });
