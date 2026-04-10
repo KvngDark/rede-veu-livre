@@ -1,7 +1,7 @@
 {
   "name": "rede-veu-livre",
   "version": "1.0.0",
-  "description": "Sistema de resistência pós-apocalíptico",
+  "description": "Sistema de resistência pós-apocalíptico com chat em tempo real",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
