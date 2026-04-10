@@ -52,7 +52,6 @@
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .user-status { background: #0a0a0a; padding: 10px; margin-bottom: 15px; border-radius: 5px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
         
-        /* Chat Público */
         .chat-container { display: flex; flex-direction: column; height: 500px; background: #0a0a0a; border: 1px solid #4a0e4e; border-radius: 5px; }
         .chat-messages { flex: 1; overflow-y: auto; padding: 15px; }
         .message { margin-bottom: 10px; padding: 8px; background: #1a1a2e; border-radius: 5px; word-wrap: break-word; cursor: pointer; transition: background 0.2s; }
@@ -63,7 +62,6 @@
         .chat-input-area { display: flex; padding: 10px; gap: 10px; border-top: 1px solid #4a0e4e; }
         .chat-input-area input { flex: 1; padding: 10px; background: #0a0a0a; border: 1px solid #6a0dad; color: white; border-radius: 5px; }
         
-        /* Posts do Fórum */
         .post { background: #0f0f1a; margin-bottom: 15px; padding: 15px; border-radius: 5px; border-left: 4px solid; position: relative; }
         .post.alerta { border-left-color: #ff0000; }
         .post.discussao { border-left-color: #ffcc00; }
@@ -74,7 +72,6 @@
         .author-name { cursor: pointer; color: #9b30ff; }
         .author-name:hover { text-decoration: underline; }
         
-        /* Mapa */
         .states-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin-bottom: 20px; }
         .state-card { background: #0f0f1a; border: 1px solid #6a0dad; padding: 10px; border-radius: 5px; cursor: pointer; text-align: center; transition: all 0.3s; }
         .state-card:hover { transform: translateY(-3px); background: #1a1a2e; }
@@ -83,11 +80,9 @@
         .state-card.baixa { border-left: 4px solid #ff0000; }
         .state-info-panel { background: #0a0a0a; padding: 15px; border-radius: 5px; margin-top: 15px; }
         
-        /* Desaparecidos */
         .missing-card { background: #0f0f1a; border: 1px solid #4a0e4e; padding: 15px; border-radius: 5px; margin-bottom: 15px; position: relative; }
         .missing-delete-btn { position: absolute; top: 10px; right: 10px; background: #ff0000; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer; }
         
-        /* Chat Privado - Estilo WhatsApp/Facebook */
         .private-chat-panel {
             position: fixed;
             bottom: 0;
@@ -159,9 +154,9 @@
             border: none;
             border-radius: 5px;
             cursor: pointer;
+            color: white;
         }
         
-        /* Lista de Conversas (Painel Lateral) */
         .conversations-sidebar {
             position: fixed;
             left: 0;
@@ -214,48 +209,24 @@
             font-size: 12px;
         }
         
-        
-        /* Modal */
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 1100; justify-content: center; align-items: center; padding: 20px; }
-        .modal-content { background: #0a0a0a; border: 2px solid #6a0dad; padding: 20px; border-radius: 10px; max-width: 500px; width: 100%; max-height: 90vh; overflow-y: auto; }
-        .alert-banner { background: #1a0a0a; border-left: 4px solid #ff3366; padding: 10px; margin: 10px 0; font-size: 0.9em; }
-        /* Correções para Modais */
-        .modal-content input, 
-        .modal-content textarea, 
-        .modal-content select {
-            background: #1a1a2e !important;
-            border: 1px solid #6a0dad !important;
-            color: #b0b0b0 !important;
-            padding: 12px !important;
-            border-radius: 5px !important;
-            margin-bottom: 15px !important;
+        .modal-content { background: #0a0a0a; border: 2px solid #6a0dad; padding: 30px; border-radius: 10px; max-width: 500px; width: 100%; max-height: 90vh; overflow-y: auto; }
+        .modal-content h3 { color: #9b30ff; margin-bottom: 20px; text-align: center; }
+        .modal-content input, .modal-content textarea, .modal-content select {
+            width: 100%; padding: 12px; background: #1a1a2e; border: 1px solid #6a0dad;
+            color: #b0b0b0; border-radius: 5px; margin-bottom: 15px;
         }
-
         .modal-content button {
-            background: #6a0dad !important;
-            color: white !important;
-            border: none !important;
-            padding: 10px 20px !important;
-            border-radius: 5px !important;
-            cursor: pointer !important;
-            transition: all 0.3s !important;
+            background: #6a0dad; color: white; border: none; padding: 10px 20px;
+            border-radius: 5px; cursor: pointer; margin-right: 10px;
         }
-
-        .modal-content button:hover {
-            background: #9b30ff !important;
-            transform: translateY(-2px) !important;
-        }
-
-        .modal-content input:focus {
-            outline: none !important;
-            border-color: #9b30ff !important;
-            box-shadow: 0 0 5px rgba(155, 48, 255, 0.5) !important;
-        }
+        .modal-content button:hover { background: #9b30ff; transform: translateY(-2px); }
+        
+        .alert-banner { background: #1a0a0a; border-left: 4px solid #ff3366; padding: 10px; margin: 10px 0; font-size: 0.9em; }
         
         @media (max-width: 768px) {
             .container { padding: 10px; }
             .tab-btn { font-size: 0.8em; padding: 8px 10px; }
-            .conversations-sidebar { width: 250px; }
             .private-chat-panel { width: 280px; right: 10px; }
         }
     </style>
@@ -264,6 +235,9 @@
 <div class="container">
     <div class="header">
         <h1 onclick="toggleAdminModal()">🌐 REDE VÉU LIVRE</h1>
+        <div class="admin-icon" onclick="toggleAdminModal()">
+            <i class="fas fa-crown"></i>
+        </div>
         <div class="subtitulo">"Se você está lendo isso, você ainda tem escolha."</div>
     </div>
 
@@ -321,10 +295,8 @@
     </div>
 </div>
 
-<!-- Botão toggle conversas -->
 <button class="toggle-chats-btn" onclick="toggleConversations()">💬 Conversas</button>
 
-<!-- Painel de Conversas -->
 <div id="conversationsSidebar" class="conversations-sidebar">
     <div style="padding: 10px; border-bottom: 1px solid #6a0dad;">
         <h3 style="color: #9b30ff;">Conversas Privadas</h3>
@@ -332,7 +304,6 @@
     <div id="conversationsList"></div>
 </div>
 
-<!-- Chat Privado Flutuante -->
 <div id="privateChatPanel" class="private-chat-panel">
     <div class="private-chat-header" onclick="togglePrivateChat()">
         <h4 id="privateChatTitle">Chat Privado</h4>
@@ -345,7 +316,6 @@
     </div>
 </div>
 
-<!-- Modais -->
 <div id="loginModal" class="modal">
     <div class="modal-content">
         <h3>REDE VÉU LIVRE - Acesso</h3>
@@ -359,7 +329,7 @@
 
 <div id="adminModal" class="modal">
     <div class="modal-content">
-        <h3> Área Administrativa</h3>
+        <h3>👑 Área Administrativa</h3>
         <p>Criar novo administrador:</p>
         <input type="text" id="adminUsername" placeholder="Nome do usuário"><br><br>
         <input type="password" id="adminPassword" placeholder="Senha"><br><br>
@@ -407,9 +377,8 @@
     let socket = null;
     let posts = [];
     let currentPrivateChat = null;
-    let privateChats = {}; // Armazenar mensagens por usuário
+    let privateChats = {};
     let unreadCounts = {};
-    let conversationsList = [];
 
     // Verificar sessão
     async function checkSession() {
@@ -418,18 +387,39 @@
         if (data.user) {
             currentUser = data.user;
             currentUserIsAdmin = data.isAdmin || false;
-            document.getElementById('userStatus').innerHTML = `✅ Logado: ${currentUser} ${currentUserIsAdmin ? '' : ''} | <button onclick="logout()">Sair</button>`;
+            document.getElementById('userStatus').innerHTML = `✅ Logado: ${currentUser} ${currentUserIsAdmin ? '👑' : ''} | <button onclick="logout()">Sair</button>`;
             initSocket();
             loadUsers();
         }
     }
 
+    // CONFIGURAÇÃO DO SOCKET PARA RENDER - COM POLLING
     function initSocket() {
         if (socket) socket.disconnect();
-        socket = io({ auth: { username: currentUser } });
+        
+        socket = io({
+            auth: { username: currentUser },
+            transports: ['polling', 'websocket'],
+            reconnection: true,
+            reconnectionAttempts: 10,
+            reconnectionDelay: 1000,
+            reconnectionDelayMax: 5000,
+            timeout: 30000
+        });
         
         socket.on('connect', () => {
-            document.getElementById('chatStatus').innerHTML = '✅ Conectado ao chat';
+            console.log('✅ Conectado ao chat');
+            document.getElementById('chatStatus').innerHTML = '✅ Conectado ao chat da resistência';
+        });
+        
+        socket.on('connect_error', (error) => {
+            console.log('❌ Erro de conexão:', error);
+            document.getElementById('chatStatus').innerHTML = '⚠️ Reconectando...';
+        });
+        
+        socket.on('disconnect', () => {
+            console.log('⚠️ Desconectado');
+            document.getElementById('chatStatus').innerHTML = '⚠️ Desconectado. Tentando reconectar...';
         });
         
         socket.on('chat history', (messages) => {
@@ -442,7 +432,6 @@
         socket.on('user joined', (msg) => addSystemMessage(msg));
         socket.on('user left', (msg) => addSystemMessage(msg));
         
-        // Mensagens privadas
         socket.on('private message received', (data) => {
             addPrivateMessageReceived(data.from, data.message, data.timestamp);
         });
@@ -451,7 +440,6 @@
     async function loadUsers() {
         const response = await fetch('/api/users');
         const users = await response.json();
-        // Atualizar lista de conversas
         updateConversationsList(users);
     }
     
@@ -462,7 +450,7 @@
         container.innerHTML = users.map(user => `
             <div class="conversation-item" onclick="openPrivateChat('${user.username}')">
                 <div>
-                    <div class="conversation-name">${user.username} ${user.is_admin ? '' : ''}</div>
+                    <div class="conversation-name">${user.username} ${user.is_admin ? '👑' : ''}</div>
                     <div class="conversation-preview">${privateChats[user.username]?.preview || 'Clique para conversar'}</div>
                 </div>
                 ${unreadCounts[user.username] ? `<span class="unread-badge">${unreadCounts[user.username]}</span>` : ''}
@@ -480,14 +468,12 @@
         document.getElementById('privateChatTitle').innerHTML = `💬 ${username}`;
         document.getElementById('privateChatPanel').style.display = 'flex';
         
-        // Limpar notificações
         if (unreadCounts[username]) {
             unreadCounts[username] = 0;
             updateConversationsList([]);
             if (socket) socket.emit('mark read', { from: username });
         }
         
-        // Carregar histórico
         loadPrivateMessages(username);
     }
     
@@ -504,7 +490,7 @@
                 const isSent = msg.from_user === currentUser;
                 const div = document.createElement('div');
                 div.className = `private-message ${isSent ? 'sent' : 'received'}`;
-                div.innerHTML = `${msg.message}<small>${new Date(msg.created_at).toLocaleTimeString()}</small>`;
+                div.innerHTML = `${escapeHtml(msg.message)}<small>${new Date(msg.created_at).toLocaleTimeString()}</small>`;
                 container.appendChild(div);
             });
             container.scrollTop = container.scrollHeight;
@@ -521,10 +507,8 @@
             addSystemMessage(`📨 Nova mensagem de ${from}`);
         }
         
-        loadUsers(); // Atualizar lista
-        updateConversationsList([]);
+        loadUsers();
         
-        // Se o chat está aberto com essa pessoa, atualizar
         if (currentPrivateChat === from) {
             loadPrivateMessages(from);
         }
@@ -539,11 +523,10 @@
             socket.emit('private message', { to: currentPrivateChat, message });
             input.value = '';
             
-            // Adicionar localmente
             const container = document.getElementById('privateChatMessages');
             const div = document.createElement('div');
             div.className = 'private-message sent';
-            div.innerHTML = `${message}<small>${new Date().toLocaleTimeString()}</small>`;
+            div.innerHTML = `${escapeHtml(message)}<small>${new Date().toLocaleTimeString()}</small>`;
             container.appendChild(div);
             container.scrollTop = container.scrollHeight;
         }
@@ -574,7 +557,7 @@
         const time = timestamp ? new Date(timestamp).toLocaleTimeString() : new Date().toLocaleTimeString();
         const div = document.createElement('div');
         div.className = 'message';
-        div.innerHTML = `<strong class="author-name" onclick="openPrivateChat('${sender}')">${escapeHtml(sender)}:</strong> ${escapeHtml(message)}<br><small>${time}</small>`;
+        div.innerHTML = `<strong class="author-name" onclick="openPrivateChat('${escapeHtml(sender)}')">${escapeHtml(sender)}:</strong> ${escapeHtml(message)}<br><small>${time}</small>`;
         container.appendChild(div);
         container.scrollTop = container.scrollHeight;
     }
@@ -628,76 +611,40 @@
         }
     }
     
-   async function register() {
-    const username = document.getElementById('loginUser').value;
-    const password = document.getElementById('loginPass').value;
-    
-    console.log('📝 Tentando registrar:', username);
-    
-    if (!username || !password) {
-        alert('Preencha todos os campos!');
-        return;
-    }
-    
-    try {
+    async function register() {
+        const username = document.getElementById('loginUser').value;
+        const password = document.getElementById('loginPass').value;
+        
         const response = await fetch('/api/register', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username, password, adminCode: '' })
+            body: JSON.stringify({ username, password })
         });
         
         const result = await response.json();
-        console.log('📦 Resposta:', result);
-        
         if (result.success) {
-            alert('✅ Conta criada! Agora faça login.');
+            alert('Conta criada! Faça login.');
             closeModal('loginModal');
-            document.getElementById('loginUser').value = '';
-            document.getElementById('loginPass').value = '';
         } else {
-            alert('❌ Erro: ' + result.error);
+            alert('Erro: ' + result.error);
         }
-    } catch (error) {
-        console.error('❌ Erro:', error);
-        alert('❌ Erro de conexão');
     }
-}
     
     async function registerAdmin() {
-    const username = document.getElementById('adminUsername').value;
-    const password = document.getElementById('adminPassword').value;
-    const adminCode = document.getElementById('adminCode').value;
-    
-    console.log('🔐 Tentando criar admin:', { username, adminCode });
-    
-    // Validações
-    if (!username || !password) {
-        alert('❌ Preencha todos os campos!');
-        return;
-    }
-    
-    if (username.length < 3) {
-        alert('❌ Usuário deve ter pelo menos 3 caracteres');
-        return;
-    }
-    
-    if (password.length < 4) {
-        alert('❌ Senha deve ter pelo menos 4 caracteres');
-        return;
-    }
-    
-    if (adminCode !== 'ADMIN2024') {
-        alert('❌ Código de admin inválido!');
-        return;
-    }
-    
-    // Mostrar loading
-    const btn = event.target;
-    const originalText = btn.innerText;
-    btn.innerText = '⏳ Criando...';
-    btn.disabled = true;
-    
-    try {
+        const username = document.getElementById('adminUsername').value;
+        const password = document.getElementById('adminPassword').value;
+        const adminCode = document.getElementById('adminCode').value;
+        
+        if (!username || !password) {
+            alert('Preencha todos os campos!');
+            return;
+        }
+        
+        if (adminCode !== 'ADMIN2024') {
+            alert('Código de admin inválido!');
+            return;
+        }
+        
         const response = await fetch('/api/register', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -705,25 +652,16 @@
         });
         
         const result = await response.json();
-        console.log('📦 Resposta do servidor:', result);
-        
         if (result.success) {
-            alert(result.isAdmin ? '✅ Admin criado com sucesso! Faça login.' : '✅ Usuário criado com sucesso!');
+            alert(result.isAdmin ? 'Admin criado com sucesso!' : 'Usuário criado!');
             closeModal('adminModal');
             document.getElementById('adminUsername').value = '';
             document.getElementById('adminPassword').value = '';
             document.getElementById('adminCode').value = '';
         } else {
-            alert('❌ Erro: ' + (result.error || 'Não foi possível criar o usuário'));
+            alert('Erro: ' + result.error);
         }
-    } catch (error) {
-        console.error('❌ Erro de rede:', error);
-        alert('❌ Erro de conexão. Verifique se o servidor está rodando.');
-    } finally {
-        btn.innerText = originalText;
-        btn.disabled = false;
     }
-}
     
     async function makeAdmin() {
         const username = document.getElementById('makeAdminUser').value;
@@ -818,7 +756,7 @@
         container.innerHTML = posts.map(post => `
             <div class="post ${post.type}">
                 <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
-                    <strong>${getTypeIcon(post.type)} <span class="author-name" onclick="openPrivateChat('${post.author}')">${escapeHtml(post.author)}</span></strong>
+                    <strong>${getTypeIcon(post.type)} <span class="author-name" onclick="openPrivateChat('${escapeHtml(post.author)}')">${escapeHtml(post.author)}</span></strong>
                     <small>${new Date(post.created_at).toLocaleString()}</small>
                 </div>
                 <h3>${escapeHtml(post.title)}</h3>
@@ -851,7 +789,7 @@
             <div style="margin-top: 10px;">
                 ${comments.map(c => `
                     <div style="background: #0a0a0a; padding: 8px; margin: 5px 0; border-radius: 5px;">
-                        <strong class="author-name" onclick="openPrivateChat('${c.author}')">${escapeHtml(c.author)}:</strong> ${escapeHtml(c.content)}<br>
+                        <strong class="author-name" onclick="openPrivateChat('${escapeHtml(c.author)}')">${escapeHtml(c.author)}:</strong> ${escapeHtml(c.content)}<br>
                         <small>${new Date(c.created_at).toLocaleString()}</small>
                     </div>
                 `).join('')}
@@ -923,7 +861,7 @@
                 <p><strong>Local:</strong> ${escapeHtml(person.location)}</p>
                 <p><strong>Descrição:</strong> ${escapeHtml(person.description)}</p>
                 <p><strong>Status:</strong> ${person.status}</p>
-                <small>Reportado por: <span class="author-name" onclick="openPrivateChat('${person.created_by}')">${person.created_by}</span></small>
+                <small>Reportado por: <span class="author-name" onclick="openPrivateChat('${escapeHtml(person.created_by)}')">${escapeHtml(person.created_by)}</span></small>
                 ${currentUserIsAdmin ? `<button class="missing-delete-btn" onclick="deleteMissing(${person.id})">🗑️ Excluir</button>` : ''}
             </div>
         `).join('');
