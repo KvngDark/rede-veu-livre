@@ -305,23 +305,70 @@ app.post('/api/login', (req, res) => {
 });
 
 // Registro
+// Registro - VERSÃO COMPLETAMENTE CORRIGIDA
 app.post('/api/register', async (req, res) => {
+    console.log('📝 Requisição de registro recebida:', req.body);
+    
     const { username, password, adminCode } = req.body;
     
+    // Validações básicas
     if (!username || !password) {
+        console.log('❌ Campos faltando:', { username, password });
         return res.status(400).json({ error: 'Preencha todos os campos' });
     }
     
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const isAdmin = (adminCode === 'ADMIN2024'); // Código secreto para criar admin
+    if (username.length < 3) {
+        return res.status(400).json({ error: 'Usuário deve ter pelo menos 3 caracteres' });
+    }
     
-    db.query('INSERT INTO users (username, password, is_admin) VALUES (?, ?, ?)',
-        [username, hashedPassword, isAdmin], (err) => {
+    if (password.length < 4) {
+        return res.status(400).json({ error: 'Senha deve ter pelo menos 4 caracteres' });
+    }
+    
+    try {
+        // Verificar se usuário já existe
+        db.query('SELECT * FROM users WHERE username = ?', [username], async (err, results) => {
             if (err) {
-                return res.status(400).json({ error: 'Usuário já existe' });
+                console.error('❌ Erro na query:', err);
+                return res.status(500).json({ error: 'Erro no servidor' });
             }
-            res.json({ success: true, isAdmin });
+            
+            console.log('📊 Resultado da busca:', results);
+            
+            if (results && results.length > 0) {
+                console.log('❌ Usuário já existe:', username);
+                return res.status(400).json({ error: `Usuário "${username}" já existe! Escolha outro nome.` });
+            }
+            
+            // Verificar código de admin (ADMIN2024)
+            const isAdmin = (adminCode === 'ADMIN2024');
+            console.log('👑 É admin?', isAdmin, 'Código recebido:', adminCode);
+            
+            // Gerar hash da senha
+            const hashedPassword = await bcrypt.hash(password, 10);
+            console.log('🔐 Hash gerado:', hashedPassword.substring(0, 20) + '...');
+            
+            // Inserir novo usuário
+            db.query('INSERT INTO users (username, password, is_admin) VALUES (?, ?, ?)',
+                [username, hashedPassword, isAdmin], (err, result) => {
+                    if (err) {
+                        console.error('❌ Erro ao inserir:', err);
+                        return res.status(500).json({ error: 'Erro ao criar usuário: ' + err.message });
+                    }
+                    
+                    console.log('✅ Usuário criado com sucesso! ID:', result.insertId);
+                    
+                    res.json({ 
+                        success: true, 
+                        isAdmin: isAdmin,
+                        message: isAdmin ? '✅ Admin criado com sucesso!' : '✅ Usuário criado com sucesso!'
+                    });
+                });
         });
+    } catch (error) {
+        console.error('❌ Erro inesperado:', error);
+        res.status(500).json({ error: 'Erro interno do servidor' });
+    }
 });
 
 // Logout
