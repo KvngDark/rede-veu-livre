@@ -34,7 +34,7 @@ const db = mysql.createConnection({
     password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME || 'rede_veu_livre',
     port: 4000,
-    ssl: { rejectUnauthorized: false } // Modo teste
+    ssl: { rejectUnauthorized: false }
 });
 
 db.connect((err) => {
@@ -43,8 +43,6 @@ db.connect((err) => {
         process.exit(1);
     }
     console.log('✅ Conectado ao TiDB Cloud com sucesso!');
-    
-    // Criar tabelas automaticamente
     criarTabelas();
 });
 
@@ -55,6 +53,7 @@ function criarTabelas() {
             username VARCHAR(50) UNIQUE NOT NULL,
             password VARCHAR(255) NOT NULL,
             character_name VARCHAR(100),
+            is_admin BOOLEAN DEFAULT FALSE,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
         
@@ -62,6 +61,8 @@ function criarTabelas() {
             id INT AUTO_INCREMENT PRIMARY KEY,
             sender VARCHAR(50) NOT NULL,
             message TEXT NOT NULL,
+            is_private BOOLEAN DEFAULT FALSE,
+            recipient VARCHAR(50),
             timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
         
@@ -72,6 +73,7 @@ function criarTabelas() {
             author VARCHAR(50) NOT NULL,
             content TEXT NOT NULL,
             deleted BOOLEAN DEFAULT FALSE,
+            deleted_by VARCHAR(50),
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
         
@@ -104,6 +106,17 @@ function criarTabelas() {
             safety VARCHAR(20),
             recommendation TEXT
         );
+        
+        CREATE TABLE IF NOT EXISTS private_messages (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            from_user VARCHAR(50) NOT NULL,
+            to_user VARCHAR(50) NOT NULL,
+            message TEXT NOT NULL,
+            is_read BOOLEAN DEFAULT FALSE,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            INDEX idx_users (from_user, to_user),
+            INDEX idx_recipient (to_user, is_read)
+        );
     `;
     
     db.query(sqlTables, (err) => {
@@ -112,33 +125,47 @@ function criarTabelas() {
         } else {
             console.log('✅ Tabelas criadas/verificadas');
             criarAdmin();
+            criarEstadosIniciais();
         }
     });
 }
 
 function criarAdmin() {
-    const adminUser = 'RianGomes';
-    const adminPass = 'Luiza1908';
-    
-    bcrypt.hash(adminPass, 10, (err, hash) => {
-        if (err) return;
+    db.query('SELECT * FROM users WHERE username = ?', ['RianGomes'], async (err, results) => {
+        const hash = await bcrypt.hash('Luiza1908', 10);
         
-        db.query('DELETE FROM users WHERE username = ?', [adminUser], (err) => {
-            db.query('INSERT INTO users (username, password, character_name) VALUES (?, ?, ?)',
-                [adminUser, hash, 'Rian Gomes - Líder da Resistência'], (err) => {
-                    if (err) {
-                        console.log('Admin já existe ou erro:', err?.message);
-                    } else {
-                        console.log('✅ Usuário Admin Rian Gomes criado!');
-                        console.log('   Usuário: RianGomes');
-                        console.log('   Senha: Luiza1908');
-                    }
+        if (results && results.length > 0) {
+            db.query('UPDATE users SET password = ?, is_admin = TRUE, character_name = ? WHERE username = ?',
+                [hash, '👑 Rian Gomes - Fundador', 'RianGomes'], (err) => {
+                    if (!err) console.log('✅ Admin RianGomes atualizado');
                 });
-        });
+        } else {
+            db.query('INSERT INTO users (username, password, character_name, is_admin) VALUES (?, ?, ?, ?)',
+                ['RianGomes', hash, '👑 Rian Gomes - Fundador', true], (err) => {
+                    if (!err) console.log('✅ Admin RianGomes criado');
+                });
+        }
     });
 }
 
-// ============ SOCKET.IO - CHAT ============
+function criarEstadosIniciais() {
+    const estados = [
+        ['SP', 'São Paulo', '~46.649.130', 'Megacidade com alta atividade anormal', 'ONG "Mãos Dadas" controla o caos', 'Alta', 'O Santuário na Liberdade oferece proteção completa'],
+        ['RJ', 'Rio de Janeiro', '~17.463.350', 'Caos urbano com facções se difundindo', 'Facções dominam todo o estado', 'Baixa', 'Evite áreas de risco, Zona Sul é mais segura'],
+        ['MG', 'Minas Gerais', '~21.411.920', 'Locais históricos sendo alvos de grupos', 'Grupo "O Olho" domina a região', 'Média', 'Belo Horizonte é relativamente segura'],
+        ['RS', 'Rio Grande do Sul', '~11.466.630', 'Pampas com matilhas gaúchas', 'Lobisomens dominam Porto Alegre', 'Alta', 'Evite noites de lua cheia'],
+        ['BA', 'Bahia', '~14.985.280', 'Litoral e interior em alerta', 'Místicos do Candomblé dominam Salvador', 'Média', 'Evite cemitérios'],
+        ['PE', 'Pernambuco', '~9.674.790', 'Área costeira irregular', '"Transtornados" andam por Recife', 'Baixa', 'Não ande sozinho'],
+        ['AM', 'Amazonas', '~4.270.000', 'Alta atividade na selva', 'Tribos indígenas em purificação', 'Baixa', 'Não entre na floresta sem guias'],
+        ['DF', 'Distrito Federal', '~3.094.330', 'Sede do governo', 'Governo controla a região', 'Alta', 'Entrada permitida apenas para cidadãos']
+    ];
+    
+    estados.forEach(e => {
+        db.query('INSERT IGNORE INTO states_info (uf, name, population, status, `groups`, safety, recommendation) VALUES (?, ?, ?, ?, ?, ?, ?)', e);
+    });
+}
+
+// ============ SOCKET.IO - CHAT PÚBLICO E PRIVADO ============
 io.use((socket, next) => {
     const username = socket.handshake.auth.username;
     if (!username) {
@@ -151,7 +178,8 @@ io.use((socket, next) => {
 io.on('connection', (socket) => {
     console.log(`📡 Conectado: ${socket.username}`);
     
-    db.query('SELECT sender, message, timestamp FROM chat_messages ORDER BY timestamp DESC LIMIT 50', 
+    // Carregar histórico do chat público
+    db.query('SELECT sender, message, timestamp FROM chat_messages WHERE is_private = FALSE ORDER BY timestamp DESC LIMIT 50', 
         (err, results) => {
             if (!err && results) {
                 socket.emit('chat history', results.reverse());
@@ -161,6 +189,7 @@ io.on('connection', (socket) => {
     
     socket.broadcast.emit('user joined', `${socket.username} entrou no chat`);
     
+    // Mensagem pública
     socket.on('chat message', (data) => {
         const message = {
             sender: socket.username,
@@ -168,12 +197,49 @@ io.on('connection', (socket) => {
             timestamp: new Date()
         };
         
-        db.query('INSERT INTO chat_messages (sender, message) VALUES (?, ?)',
+        db.query('INSERT INTO chat_messages (sender, message, is_private) VALUES (?, ?, FALSE)',
             [socket.username, data.message], (err) => {
                 if (!err) {
                     io.emit('chat message', message);
                 }
             });
+    });
+    
+    // Mensagem privada
+    socket.on('private message', (data) => {
+        const { to, message } = data;
+        
+        db.query('INSERT INTO private_messages (from_user, to_user, message) VALUES (?, ?, ?)',
+            [socket.username, to, message], (err) => {
+                if (!err) {
+                    // Notificar o destinatário se estiver online
+                    io.to(to).emit('private message received', {
+                        from: socket.username,
+                        message: message,
+                        timestamp: new Date()
+                    });
+                    socket.emit('private message sent', { to, message });
+                }
+            });
+    });
+    
+    // Carregar mensagens privadas
+    socket.on('load private messages', (data, callback) => {
+        const { withUser } = data;
+        
+        db.query(`SELECT * FROM private_messages 
+                  WHERE (from_user = ? AND to_user = ?) OR (from_user = ? AND to_user = ?)
+                  ORDER BY created_at ASC`,
+            [socket.username, withUser, withUser, socket.username], 
+            (err, results) => {
+                if (callback) callback(results || []);
+            });
+    });
+    
+    // Marcar mensagens como lidas
+    socket.on('mark read', (data) => {
+        db.query('UPDATE private_messages SET is_read = TRUE WHERE to_user = ? AND from_user = ?',
+            [socket.username, data.from]);
     });
     
     socket.on('disconnect', () => {
@@ -182,6 +248,42 @@ io.on('connection', (socket) => {
 });
 
 // ============ ROTAS DA API ============
+
+// Listar todos os usuários (para chat privado)
+app.get('/api/users', (req, res) => {
+    if (!req.session.user) return res.status(401).json({ error: 'Não logado' });
+    
+    db.query('SELECT username, character_name, is_admin FROM users WHERE username != ? ORDER BY username', 
+        [req.session.user], (err, results) => {
+            res.json(results || []);
+        });
+});
+
+// Verificar se usuário é admin
+app.get('/api/isAdmin', (req, res) => {
+    if (!req.session.user) return res.json({ isAdmin: false });
+    
+    db.query('SELECT is_admin FROM users WHERE username = ?', [req.session.user], (err, results) => {
+        res.json({ isAdmin: results && results[0]?.is_admin || false });
+    });
+});
+
+// Tornar outro usuário admin (apenas admin pode fazer)
+app.post('/api/makeAdmin', (req, res) => {
+    if (!req.session.user) return res.status(401).json({ error: 'Não logado' });
+    
+    db.query('SELECT is_admin FROM users WHERE username = ?', [req.session.user], (err, results) => {
+        if (err || !results[0]?.is_admin) {
+            return res.status(403).json({ error: 'Apenas administradores podem fazer isso' });
+        }
+        
+        const { username } = req.body;
+        db.query('UPDATE users SET is_admin = TRUE WHERE username = ?', [username], (err) => {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ success: true });
+        });
+    });
+});
 
 // Login
 app.post('/api/login', (req, res) => {
@@ -195,7 +297,7 @@ app.post('/api/login', (req, res) => {
         const valid = await bcrypt.compare(password, results[0].password);
         if (valid) {
             req.session.user = username;
-            res.json({ success: true, username });
+            res.json({ success: true, username, isAdmin: results[0].is_admin });
         } else {
             res.status(401).json({ error: 'Senha incorreta' });
         }
@@ -204,20 +306,21 @@ app.post('/api/login', (req, res) => {
 
 // Registro
 app.post('/api/register', async (req, res) => {
-    const { username, password } = req.body;
+    const { username, password, adminCode } = req.body;
     
     if (!username || !password) {
         return res.status(400).json({ error: 'Preencha todos os campos' });
     }
     
     const hashedPassword = await bcrypt.hash(password, 10);
+    const isAdmin = (adminCode === 'ADMIN2024'); // Código secreto para criar admin
     
-    db.query('INSERT INTO users (username, password) VALUES (?, ?)',
-        [username, hashedPassword], (err) => {
+    db.query('INSERT INTO users (username, password, is_admin) VALUES (?, ?, ?)',
+        [username, hashedPassword, isAdmin], (err) => {
             if (err) {
                 return res.status(400).json({ error: 'Usuário já existe' });
             }
-            res.json({ success: true });
+            res.json({ success: true, isAdmin });
         });
 });
 
@@ -257,6 +360,39 @@ app.post('/api/posts', (req, res) => {
             }
             res.json({ success: true, postId: result.insertId });
         });
+});
+
+// Deletar post (apenas admin)
+app.delete('/api/posts/:id', (req, res) => {
+    if (!req.session.user) return res.status(401).json({ error: 'Não logado' });
+    
+    db.query('SELECT is_admin FROM users WHERE username = ?', [req.session.user], (err, results) => {
+        if (err || !results[0]?.is_admin) {
+            return res.status(403).json({ error: 'Apenas administradores podem deletar posts' });
+        }
+        
+        db.query('UPDATE forum_posts SET deleted = TRUE, deleted_by = ? WHERE id = ?',
+            [req.session.user, req.params.id], (err) => {
+                if (err) return res.status(500).json({ error: err.message });
+                res.json({ success: true });
+            });
+    });
+});
+
+// Deletar desaparecido (apenas admin)
+app.delete('/api/missing/:id', (req, res) => {
+    if (!req.session.user) return res.status(401).json({ error: 'Não logado' });
+    
+    db.query('SELECT is_admin FROM users WHERE username = ?', [req.session.user], (err, results) => {
+        if (err || !results[0]?.is_admin) {
+            return res.status(403).json({ error: 'Apenas administradores podem deletar' });
+        }
+        
+        db.query('DELETE FROM missing_persons WHERE id = ?', [req.params.id], (err) => {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ success: true });
+        });
+    });
 });
 
 // Comentários
@@ -302,23 +438,7 @@ app.post('/api/missing', (req, res) => {
 // Estados
 app.get('/api/states', (req, res) => {
     db.query('SELECT * FROM states_info', (err, results) => {
-        if (err) return res.status(500).json({ error: err.message });
-        
-        if (results.length === 0) {
-            const estados = [
-                ['SP', 'São Paulo', '~46.649.130', 'Megacidade com alta atividade anormal', 'ONG "Mãos Dadas" controla o caos', 'Alta', 'O Santuário na Liberdade oferece proteção completa'],
-                ['RJ', 'Rio de Janeiro', '~17.463.350', 'Caos urbano com facções se difundindo', 'Facções dominam todo o estado', 'Baixa', 'Evite áreas de risco, Zona Sul é mais segura'],
-                ['MG', 'Minas Gerais', '~21.411.920', 'Locais históricos sendo alvos de grupos', 'Grupo "O Olho" domina a região', 'Média', 'Belo Horizonte é relativamente segura'],
-                ['RS', 'Rio Grande do Sul', '~11.466.630', 'Pampas com matilhas gaúchas', 'Lobisomens dominam Porto Alegre', 'Alta', 'Evite noites de lua cheia']
-            ];
-            
-            estados.forEach(e => {
-                db.query('INSERT INTO states_info (uf, name, population, status, `groups`, safety, recommendation) VALUES (?, ?, ?, ?, ?, ?, ?)', e);
-            });
-            res.json([]);
-        } else {
-            res.json(results);
-        }
+        res.json(results || []);
     });
 });
 
@@ -329,7 +449,16 @@ app.get('/api/state/:uf', (req, res) => {
 });
 
 app.get('/api/session', (req, res) => {
-    res.json({ user: req.session.user || null });
+    if (!req.session.user) {
+        return res.json({ user: null });
+    }
+    
+    db.query('SELECT username, is_admin FROM users WHERE username = ?', [req.session.user], (err, results) => {
+        res.json({ 
+            user: req.session.user,
+            isAdmin: results && results[0]?.is_admin || false
+        });
+    });
 });
 
 // Servir frontend
