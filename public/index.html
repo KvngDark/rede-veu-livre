@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>REDE VÉU LIVRE - Resistência</title>
+    <title>REDE VEU LIVRE - Resistencia</title>
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -82,7 +82,9 @@
         
         .missing-card { background: #0f0f1a; border: 1px solid #4a0e4e; padding: 15px; border-radius: 5px; margin-bottom: 15px; position: relative; }
         .missing-delete-btn { position: absolute; top: 10px; right: 10px; background: #ff0000; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer; }
+        .missing-delete-btn:hover { background: #cc0000; }
         
+        /* Chat Privado */
         .private-chat-panel {
             position: fixed;
             bottom: 0;
@@ -107,6 +109,7 @@
         }
         .private-chat-header h4 { color: #9b30ff; margin: 0; }
         .private-chat-close { background: none; border: none; color: #ff3366; cursor: pointer; font-size: 18px; padding: 0 5px; }
+        .private-chat-close:hover { color: #ff6666; }
         .private-chat-messages {
             height: 300px;
             overflow-y: auto;
@@ -156,23 +159,81 @@
             cursor: pointer;
             color: white;
         }
+        .private-chat-input-area button:hover { background: #9b30ff; }
         
-        .conversations-sidebar {
+        /* Sidebar de Conversas */
+        .toggle-chats-btn {
             position: fixed;
             left: 0;
             top: 50%;
             transform: translateY(-50%);
-            width: 280px;
-            background: #0a0a0a;
-            border: 1px solid #6a0dad;
-            border-left: none;
-            border-radius: 0 10px 10px 0;
-            display: none;
-            z-index: 999;
-            max-height: 70vh;
-            overflow-y: auto;
+            background: #6a0dad;
+            color: white;
+            border: none;
+            padding: 12px 8px;
+            border-radius: 0 8px 8px 0;
+            cursor: pointer;
+            z-index: 1001;
+            writing-mode: vertical-rl;
+            font-size: 14px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 2px 0 10px rgba(106, 13, 173, 0.3);
         }
-        .conversations-sidebar.show { display: block; }
+        .toggle-chats-btn:hover {
+            background: #9b30ff;
+            transform: translateY(-50%) scale(1.05);
+        }
+        
+        .conversations-sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 300px;
+            background: #0a0a0a;
+            border-right: 2px solid #6a0dad;
+            transform: translateX(-100%);
+            transition: transform 0.3s ease;
+            z-index: 1002;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 5px 0 20px rgba(0, 0, 0, 0.5);
+        }
+        .conversations-sidebar.show {
+            transform: translateX(0);
+        }
+        
+        .conversations-header {
+            padding: 15px;
+            background: #1a1a2e;
+            border-bottom: 1px solid #6a0dad;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .conversations-header h3 {
+            color: #9b30ff;
+            margin: 0;
+        }
+        .close-sidebar-btn {
+            background: none;
+            border: none;
+            color: #ff3366;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 0 5px;
+        }
+        .close-sidebar-btn:hover {
+            color: #ff6666;
+        }
+        
+        .conversations-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+        }
+        
         .conversation-item {
             padding: 12px;
             border-bottom: 1px solid #2a0a3e;
@@ -181,8 +242,12 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            border-radius: 5px;
         }
-        .conversation-item:hover { background: #1a1a2e; }
+        .conversation-item:hover {
+            background: #1a1a2e;
+            transform: translateX(5px);
+        }
         .conversation-name { color: #9b30ff; font-weight: bold; }
         .conversation-preview { font-size: 0.8em; color: #666; margin-top: 3px; }
         .unread-badge {
@@ -193,22 +258,22 @@
             font-size: 11px;
             font-weight: bold;
         }
-        .toggle-chats-btn {
+        
+        .sidebar-overlay {
             position: fixed;
+            top: 0;
             left: 0;
-            top: 50%;
-            transform: translateY(-50%);
-            background: #6a0dad;
-            color: white;
-            border: none;
-            padding: 10px 5px;
-            border-radius: 0 5px 5px 0;
-            cursor: pointer;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
             z-index: 1001;
-            writing-mode: vertical-rl;
-            font-size: 12px;
+            display: none;
+        }
+        .sidebar-overlay.show {
+            display: block;
         }
         
+        /* Modais */
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 1100; justify-content: center; align-items: center; padding: 20px; }
         .modal-content { background: #0a0a0a; border: 2px solid #6a0dad; padding: 30px; border-radius: 10px; max-width: 500px; width: 100%; max-height: 90vh; overflow-y: auto; }
         .modal-content h3 { color: #9b30ff; margin-bottom: 20px; text-align: center; }
@@ -228,53 +293,57 @@
             .container { padding: 10px; }
             .tab-btn { font-size: 0.8em; padding: 8px 10px; }
             .private-chat-panel { width: 280px; right: 10px; }
+            .conversations-sidebar { width: 280px; }
         }
     </style>
 </head>
 <body>
 <div class="container">
     <div class="header">
-        <h1 onclick="toggleAdminModal()">🌐 REDE VÉU LIVRE</h1>
-        <div class="subtitulo">"Se você está lendo isso, você ainda tem escolha."</div>
+        <h1 onclick="toggleAdminModal()">REDE VEU LIVRE</h1>
+        <div class="admin-icon" onclick="toggleAdminModal()">
+            <i class="fas fa-crown"></i>
+        </div>
+        <div class="subtitulo">"Se voce esta lendo isso, voce ainda tem escolha."</div>
     </div>
 
     <div class="user-status" id="userStatus">
-        <span>🔒 Não logado</span>
+        <span>Nao logado</span>
         <button onclick="showLoginModal()">Entrar / Cadastrar</button>
     </div>
 
     <div class="alert-banner">
-        ⚠️ AVISO: Evite contato com pregadores da Última Correção. Confie apenas na Rede. ⚠️
+        AVISO: Evite contato com pregadores da Ultima Correcao. Confie apenas na Rede.
     </div>
 
     <div class="nav-tabs">
-        <button class="tab-btn active" onclick="switchPage('home')">🏠 Início</button>
-        <button class="tab-btn" onclick="switchPage('forum')">💬 Fórum</button>
-        <button class="tab-btn" onclick="switchPage('map')">🗺️ Mapa</button>
-        <button class="tab-btn" onclick="switchPage('chat')">💭 Chat Geral</button>
-        <button class="tab-btn" onclick="switchPage('missing')">📋 Desaparecidos</button>
+        <button class="tab-btn active" onclick="switchPage('home')">Inicio</button>
+        <button class="tab-btn" onclick="switchPage('forum')">Forum</button>
+        <button class="tab-btn" onclick="switchPage('map')">Mapa</button>
+        <button class="tab-btn" onclick="switchPage('chat')">Chat Geral</button>
+        <button class="tab-btn" onclick="switchPage('missing')">Desaparecidos</button>
     </div>
 
     <div id="home" class="page active">
-        <h2>Bem-vindo à Resistência</h2>
-        <p>Somos a REDE VÉU LIVRE, liderados por Rian Gomes. Lutamos contra o culto "Última Correção".</p>
-        <div class="alert-banner" style="margin-top: 20px;">🔴 ÚLTIMA HORA: Atividade paranormal no Setor Sul!</div>
+        <h2>Bem-vindo a Resistencia</h2>
+        <p>Somos a REDE VEU LIVRE, liderados por Rian Gomes. Lutamos contra o culto "Ultima Correcao".</p>
+        <div class="alert-banner" style="margin-top: 20px;">ULTIMA HORA: Atividade paranormal no Setor Sul!</div>
     </div>
 
     <div id="forum" class="page">
-        <h2>Fórum de Resistência</h2>
+        <h2>Forum de Resistencia</h2>
         <button onclick="showNewPostModal()" style="margin-bottom: 15px;">+ Novo Post</button>
         <div id="postsContainer"></div>
     </div>
 
     <div id="map" class="page">
-        <h2>Mapa de Segurança - Brasil</h2>
+        <h2>Mapa de Seguranca - Brasil</h2>
         <div class="states-grid" id="statesGrid"></div>
         <div id="stateInfoPanel" class="state-info-panel"><p>Selecione um estado</p></div>
     </div>
 
     <div id="chat" class="page">
-        <h2>Chat Geral da Resistência</h2>
+        <h2>Chat Geral da Resistencia</h2>
         <div class="chat-container">
             <div class="chat-messages" id="chatMessages"></div>
             <div class="chat-input-area">
@@ -292,15 +361,24 @@
     </div>
 </div>
 
-<button class="toggle-chats-btn" onclick="toggleConversations()">💬 Conversas</button>
+<!-- Botao de Conversas -->
+<button class="toggle-chats-btn" onclick="toggleSidebar()">Conversas</button>
 
+<!-- Overlay para fechar sidebar -->
+<div id="sidebarOverlay" class="sidebar-overlay"></div>
+
+<!-- Sidebar de Conversas -->
 <div id="conversationsSidebar" class="conversations-sidebar">
-    <div style="padding: 10px; border-bottom: 1px solid #6a0dad;">
-        <h3 style="color: #9b30ff;">Conversas Privadas</h3>
+    <div class="conversations-header">
+        <h3>Conversas Privadas</h3>
+        <button class="close-sidebar-btn" onclick="closeSidebar()">✕</button>
     </div>
-    <div id="conversationsList"></div>
+    <div class="conversations-list" id="conversationsList">
+        <div style="padding: 20px; text-align: center; color: #666;">Carregando...</div>
+    </div>
 </div>
 
+<!-- Chat Privado Flutuante -->
 <div id="privateChatPanel" class="private-chat-panel">
     <div class="private-chat-header" onclick="togglePrivateChat()">
         <h4 id="privateChatTitle">Chat Privado</h4>
@@ -309,14 +387,15 @@
     <div class="private-chat-messages" id="privateChatMessages"></div>
     <div class="private-chat-input-area">
         <input type="text" id="privateChatInput" placeholder="Digite sua mensagem..." onkeypress="if(event.key==='Enter') sendPrivateMessage()">
-        <button onclick="sendPrivateMessage()">➤</button>
+        <button onclick="sendPrivateMessage()">Enviar</button>
     </div>
 </div>
 
+<!-- Modais -->
 <div id="loginModal" class="modal">
     <div class="modal-content">
-        <h3>REDE VÉU LIVRE - Acesso</h3>
-        <input type="text" id="loginUser" placeholder="Usuário"><br><br>
+        <h3>REDE VEU LIVRE - Acesso</h3>
+        <input type="text" id="loginUser" placeholder="Usuario"><br><br>
         <input type="password" id="loginPass" placeholder="Senha"><br><br>
         <button onclick="login()">Entrar</button>
         <button onclick="register()">Criar Conta</button>
@@ -326,15 +405,15 @@
 
 <div id="adminModal" class="modal">
     <div class="modal-content">
-        <h3>  Área Administrativa</h3>
+        <h3>Area Administrativa</h3>
         <p>Criar novo administrador:</p>
-        <input type="text" id="adminUsername" placeholder="Nome do usuário"><br><br>
+        <input type="text" id="adminUsername" placeholder="Nome do usuario"><br><br>
         <input type="password" id="adminPassword" placeholder="Senha"><br><br>
-        <input type="text" id="adminCode" placeholder="Código de Admin (ADMIN2024)"><br><br>
+        <input type="text" id="adminCode" placeholder="Codigo de Admin (ADMIN2024)"><br><br>
         <button onclick="registerAdmin()">Criar Admin</button>
         <hr style="margin: 15px 0;">
-        <p>Tornar usuário existente em admin:</p>
-        <input type="text" id="makeAdminUser" placeholder="Nome do usuário"><br><br>
+        <p>Tornar usuario existente em admin:</p>
+        <input type="text" id="makeAdminUser" placeholder="Nome do usuario"><br><br>
         <button onclick="makeAdmin()">Tornar Admin</button>
         <button onclick="closeModal('adminModal')" style="margin-top: 10px;">Fechar</button>
     </div>
@@ -344,13 +423,13 @@
     <div class="modal-content">
         <h3>Novo Post</h3>
         <select id="postType">
-            <option value="alerta">🔴 Alerta</option>
-            <option value="discussao">🟡 Discussão</option>
-            <option value="relato">🔵 Relato</option>
-            <option value="ajuda">🩸 Pedido de Ajuda</option>
+            <option value="alerta">Alerta</option>
+            <option value="discussao">Discussao</option>
+            <option value="relato">Relato</option>
+            <option value="ajuda">Pedido de Ajuda</option>
         </select><br><br>
-        <input type="text" id="postTitle" placeholder="Título"><br><br>
-        <textarea id="postContent" placeholder="Conteúdo..."></textarea><br><br>
+        <input type="text" id="postTitle" placeholder="Titulo"><br><br>
+        <textarea id="postContent" placeholder="Conteudo..."></textarea><br><br>
         <button onclick="createPost()">Publicar</button>
         <button onclick="closeModal('postModal')">Cancelar</button>
     </div>
@@ -361,8 +440,8 @@
         <h3>Adicionar Desaparecido</h3>
         <input type="text" id="missingName" placeholder="Nome"><br><br>
         <input type="number" id="missingAge" placeholder="Idade"><br><br>
-        <input type="text" id="missingLocation" placeholder="Última localização"><br><br>
-        <textarea id="missingDesc" placeholder="Descrição..."></textarea><br><br>
+        <input type="text" id="missingLocation" placeholder="Ultima localizacao"><br><br>
+        <textarea id="missingDesc" placeholder="Descricao..."></textarea><br><br>
         <button onclick="addMissing()">Adicionar</button>
         <button onclick="closeModal('missingModal')">Cancelar</button>
     </div>
@@ -377,20 +456,50 @@
     let privateChats = {};
     let unreadCounts = {};
 
-    // Verificar sessão
+    // Funcoes da Sidebar
+    function toggleSidebar() {
+        const sidebar = document.getElementById('conversationsSidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+        
+        if (sidebar.classList.contains('show')) {
+            sidebar.classList.remove('show');
+            overlay.classList.remove('show');
+        } else {
+            sidebar.classList.add('show');
+            overlay.classList.add('show');
+        }
+    }
+
+    function closeSidebar() {
+        const sidebar = document.getElementById('conversationsSidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+        sidebar.classList.remove('show');
+        overlay.classList.remove('show');
+    }
+
+    function initSidebarEvents() {
+        const overlay = document.getElementById('sidebarOverlay');
+        if (overlay) {
+            overlay.onclick = function() {
+                closeSidebar();
+            };
+        }
+    }
+
+    // Verificar sessao
     async function checkSession() {
         const response = await fetch('/api/session');
         const data = await response.json();
         if (data.user) {
             currentUser = data.user;
             currentUserIsAdmin = data.isAdmin || false;
-            document.getElementById('userStatus').innerHTML = `✅ Logado: ${currentUser} ${currentUserIsAdmin ? ' ' : ''} | <button onclick="logout()">Sair</button>`;
+            document.getElementById('userStatus').innerHTML = `Logado: ${currentUser} ${currentUserIsAdmin ? '[ADMIN]' : ''} | <button onclick="logout()">Sair</button>`;
             initSocket();
             loadUsers();
+            initSidebarEvents();
         }
     }
 
-    // CONFIGURAÇÃO DO SOCKET PARA RENDER - COM POLLING
     function initSocket() {
         if (socket) socket.disconnect();
         
@@ -405,18 +514,18 @@
         });
         
         socket.on('connect', () => {
-            console.log('✅ Conectado ao chat');
-            document.getElementById('chatStatus').innerHTML = '✅ Conectado ao chat da resistência';
+            console.log('Conectado ao chat');
+            document.getElementById('chatStatus').innerHTML = 'Conectado ao chat da resistencia';
         });
         
         socket.on('connect_error', (error) => {
-            console.log('❌ Erro de conexão:', error);
-            document.getElementById('chatStatus').innerHTML = '⚠️ Reconectando...';
+            console.log('Erro de conexao:', error);
+            document.getElementById('chatStatus').innerHTML = 'Reconectando...';
         });
         
         socket.on('disconnect', () => {
-            console.log('⚠️ Desconectado');
-            document.getElementById('chatStatus').innerHTML = '⚠️ Desconectado. Tentando reconectar...';
+            console.log('Desconectado');
+            document.getElementById('chatStatus').innerHTML = 'Desconectado. Tentando reconectar...';
         });
         
         socket.on('chat history', (messages) => {
@@ -444,10 +553,15 @@
         const container = document.getElementById('conversationsList');
         if (!container) return;
         
+        if (!users || users.length === 0) {
+            container.innerHTML = '<div style="padding: 20px; text-align: center; color: #666;">Nenhum outro usuario encontrado</div>';
+            return;
+        }
+        
         container.innerHTML = users.map(user => `
-            <div class="conversation-item" onclick="openPrivateChat('${user.username}')">
+            <div class="conversation-item" onclick="openPrivateChat('${escapeHtml(user.username)}')">
                 <div>
-                    <div class="conversation-name">${user.username} ${user.is_admin ? '' : ''}</div>
+                    <div class="conversation-name">${escapeHtml(user.username)} ${user.is_admin ? '[ADMIN]' : ''}</div>
                     <div class="conversation-preview">${privateChats[user.username]?.preview || 'Clique para conversar'}</div>
                 </div>
                 ${unreadCounts[user.username] ? `<span class="unread-badge">${unreadCounts[user.username]}</span>` : ''}
@@ -455,15 +569,12 @@
         `).join('');
     }
     
-    function toggleConversations() {
-        const sidebar = document.getElementById('conversationsSidebar');
-        sidebar.classList.toggle('show');
-    }
-    
     function openPrivateChat(username) {
         currentPrivateChat = username;
-        document.getElementById('privateChatTitle').innerHTML = `💬 ${username}`;
+        document.getElementById('privateChatTitle').innerHTML = `Chat com ${username}`;
         document.getElementById('privateChatPanel').style.display = 'flex';
+        
+        closeSidebar();
         
         if (unreadCounts[username]) {
             unreadCounts[username] = 0;
@@ -474,7 +585,7 @@
         loadPrivateMessages(username);
     }
     
-    async function loadPrivateMessages(username) {
+    function loadPrivateMessages(username) {
         if (!socket) return;
         
         socket.emit('load private messages', { withUser: username }, (messages) => {
@@ -501,7 +612,7 @@
         
         if (currentPrivateChat !== from) {
             unreadCounts[from] = (unreadCounts[from] || 0) + 1;
-            addSystemMessage(`📨 Nova mensagem de ${from}`);
+            addSystemMessage(`Nova mensagem de ${from}`);
         }
         
         loadUsers();
@@ -565,7 +676,7 @@
         div.className = 'message';
         div.style.background = '#2a1a2e';
         div.style.fontStyle = 'italic';
-        div.innerHTML = `<em>🔔 ${escapeHtml(msg)}</em>`;
+        div.innerHTML = `<em>${escapeHtml(msg)}</em>`;
         container.appendChild(div);
         container.scrollTop = container.scrollHeight;
     }
@@ -574,7 +685,7 @@
         const input = document.getElementById('chatInput');
         const message = input.value.trim();
         if (!message || !currentUser) {
-            alert('Faça login para enviar mensagens');
+            alert('Faca login para enviar mensagens');
             return;
         }
         if (socket) {
@@ -597,12 +708,12 @@
         if (result.success) {
             currentUser = username;
             currentUserIsAdmin = result.isAdmin || false;
-            document.getElementById('userStatus').innerHTML = `✅ Logado: ${currentUser} ${currentUserIsAdmin ? ' ' : ''} | <button onclick="logout()">Sair</button>`;
+            document.getElementById('userStatus').innerHTML = `Logado: ${currentUser} ${currentUserIsAdmin ? '[ADMIN]' : ''} | <button onclick="logout()">Sair</button>`;
             closeModal('loginModal');
             initSocket();
             loadForum();
             loadUsers();
-            alert(`Bem-vindo à resistência, ${username}`);
+            alert(`Bem-vindo a resistencia, ${username}`);
         } else {
             alert('Erro: ' + result.error);
         }
@@ -620,7 +731,7 @@
         
         const result = await response.json();
         if (result.success) {
-            alert('Conta criada! Faça login.');
+            alert('Conta criada! Faca login.');
             closeModal('loginModal');
         } else {
             alert('Erro: ' + result.error);
@@ -638,7 +749,7 @@
         }
         
         if (adminCode !== 'ADMIN2024') {
-            alert('Código de admin inválido!');
+            alert('Codigo de admin invalido!');
             return;
         }
         
@@ -650,7 +761,7 @@
         
         const result = await response.json();
         if (result.success) {
-            alert(result.isAdmin ? 'Admin criado com sucesso!' : 'Usuário criado!');
+            alert(result.isAdmin ? 'Admin criado com sucesso!' : 'Usuario criado!');
             closeModal('adminModal');
             document.getElementById('adminUsername').value = '';
             document.getElementById('adminPassword').value = '';
@@ -671,7 +782,7 @@
         
         const result = await response.json();
         if (result.success) {
-            alert(`${username} agora é administrador!`);
+            alert(`${username} agora e administrador!`);
             closeModal('adminModal');
         } else {
             alert('Erro: ' + result.error);
@@ -683,7 +794,7 @@
         currentUser = null;
         currentUserIsAdmin = false;
         if (socket) socket.disconnect();
-        document.getElementById('userStatus').innerHTML = '🔒 Não logado | <button onclick="showLoginModal()">Entrar</button>';
+        document.getElementById('userStatus').innerHTML = 'Nao logado | <button onclick="showLoginModal()">Entrar</button>';
         switchPage('home');
     }
     
@@ -694,13 +805,13 @@
     }
     
     async function createPost() {
-        if (!currentUser) { alert('Faça login primeiro'); showLoginModal(); return; }
+        if (!currentUser) { alert('Faca login primeiro'); showLoginModal(); return; }
         
         const type = document.getElementById('postType').value;
         const title = document.getElementById('postTitle').value;
         const content = document.getElementById('postContent').value;
         
-        if (!title || !content) { alert('Preencha título e conteúdo!'); return; }
+        if (!title || !content) { alert('Preencha titulo e conteudo!'); return; }
         
         const response = await fetch('/api/posts', {
             method: 'POST',
@@ -716,7 +827,7 @@
             loadForum();
             alert('Post criado com sucesso!');
         } else {
-            alert('Erro: ' + (result.error || 'Não foi possível criar'));
+            alert('Erro: ' + (result.error || 'Nao foi possivel criar'));
         }
     }
     
@@ -727,7 +838,7 @@
         const result = await response.json();
         if (result.success) {
             loadForum();
-            alert('Post excluído!');
+            alert('Post excluido!');
         } else {
             alert('Erro: ' + result.error);
         }
@@ -740,7 +851,7 @@
         const result = await response.json();
         if (result.success) {
             loadMissing();
-            alert('Registro excluído!');
+            alert('Registro excluido!');
         } else {
             alert('Erro: ' + result.error);
         }
@@ -758,8 +869,8 @@
                 </div>
                 <h3>${escapeHtml(post.title)}</h3>
                 <p>${escapeHtml(post.content)}</p>
-                <button onclick="toggleComments(${post.id})">💬 Comentar</button>
-                ${currentUserIsAdmin ? `<button class="delete-btn" onclick="deletePost(${post.id})">🗑️ Excluir</button>` : ''}
+                <button onclick="toggleComments(${post.id})">Comentar</button>
+                ${currentUserIsAdmin ? `<button class="delete-btn" onclick="deletePost(${post.id})">Excluir</button>` : ''}
                 <div id="comments-${post.id}" style="display: none; margin-top: 10px;"></div>
             </div>
         `).join('');
@@ -781,7 +892,7 @@
         
         const container = document.getElementById(`comments-${postId}`);
         container.innerHTML = `
-            <textarea id="comment-${postId}" placeholder="Seu comentário..." rows="2" style="width: 100%; margin-bottom: 5px;"></textarea>
+            <textarea id="comment-${postId}" placeholder="Seu comentario..." rows="2" style="width: 100%; margin-bottom: 5px;"></textarea>
             <button onclick="addComment(${postId})">Enviar</button>
             <div style="margin-top: 10px;">
                 ${comments.map(c => `
@@ -795,7 +906,7 @@
     }
     
     async function addComment(postId) {
-        if (!currentUser) { alert('Faça login para comentar'); showLoginModal(); return; }
+        if (!currentUser) { alert('Faca login para comentar'); showLoginModal(); return; }
         
         const content = document.getElementById(`comment-${postId}`).value;
         if (!content.trim()) return;
@@ -821,7 +932,7 @@
         container.innerHTML = states.map(state => `
             <div class="state-card ${state.safety.toLowerCase()}" onclick="showStateInfo('${state.uf}')">
                 <strong>${state.uf}</strong><br>${state.name}<br>
-                <small>Segurança: ${state.safety}</small>
+                <small>Seguranca: ${state.safety}</small>
             </div>
         `).join('');
     }
@@ -832,14 +943,14 @@
         const panel = document.getElementById('stateInfoPanel');
         
         if (state) {
-            let safetyColor = state.safety === 'Alta' ? '#00ff00' : (state.safety === 'Média' ? '#ff9800' : '#ff0000');
+            let safetyColor = state.safety === 'Alta' ? '#00ff00' : (state.safety === 'Media' ? '#ff9800' : '#ff0000');
             panel.innerHTML = `
                 <h3>${state.name} (${state.uf})</h3>
-                <p><strong>População:</strong> ${state.population}</p>
+                <p><strong>Populacao:</strong> ${state.population}</p>
                 <p><strong>Status:</strong> ${state.status}</p>
                 <p><strong>Grupos Dominantes:</strong> ${state.groups}</p>
-                <p><strong>Recomendação:</strong> ${state.recommendation}</p>
-                <p style="color: ${safetyColor};"><strong>Segurança:</strong> ${state.safety}</p>
+                <p><strong>Recomendacao:</strong> ${state.recommendation}</p>
+                <p style="color: ${safetyColor};"><strong>Seguranca:</strong> ${state.safety}</p>
             `;
         }
     }
@@ -856,16 +967,16 @@
                 <h3>${escapeHtml(person.name)}</h3>
                 <p><strong>Idade:</strong> ${person.age || '?'}</p>
                 <p><strong>Local:</strong> ${escapeHtml(person.location)}</p>
-                <p><strong>Descrição:</strong> ${escapeHtml(person.description)}</p>
+                <p><strong>Descricao:</strong> ${escapeHtml(person.description)}</p>
                 <p><strong>Status:</strong> ${person.status}</p>
                 <small>Reportado por: <span class="author-name" onclick="openPrivateChat('${escapeHtml(person.created_by)}')">${escapeHtml(person.created_by)}</span></small>
-                ${currentUserIsAdmin ? `<button class="missing-delete-btn" onclick="deleteMissing(${person.id})">🗑️ Excluir</button>` : ''}
+                ${currentUserIsAdmin ? `<button class="missing-delete-btn" onclick="deleteMissing(${person.id})">Excluir</button>` : ''}
             </div>
         `).join('');
     }
     
     async function addMissing() {
-        if (!currentUser) { alert('Faça login primeiro'); showLoginModal(); return; }
+        if (!currentUser) { alert('Faca login primeiro'); showLoginModal(); return; }
         
         const name = document.getElementById('missingName').value;
         const age = document.getElementById('missingAge').value;
@@ -892,7 +1003,7 @@
     
     function getTypeIcon(type) {
         const icons = { alerta: '🔴', discussao: '🟡', relato: '🔵', ajuda: '🩸' };
-        return icons[type] || '📝';
+        return icons[type] || '';
     }
     
     function escapeHtml(text) {
@@ -913,11 +1024,11 @@
     function toggleAdminModal() { document.getElementById('adminModal').style.display = 'flex'; }
     function showLoginModal() { document.getElementById('loginModal').style.display = 'flex'; }
     function showNewPostModal() {
-        if (!currentUser) { alert('Faça login para postar'); showLoginModal(); return; }
+        if (!currentUser) { alert('Faca login para postar'); showLoginModal(); return; }
         document.getElementById('postModal').style.display = 'flex';
     }
     function showNewMissingModal() {
-        if (!currentUser) { alert('Faça login para adicionar'); showLoginModal(); return; }
+        if (!currentUser) { alert('Faca login para adicionar'); showLoginModal(); return; }
         document.getElementById('missingModal').style.display = 'flex';
     }
     function closeModal(modalId) { document.getElementById(modalId).style.display = 'none'; }
