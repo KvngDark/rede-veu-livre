@@ -39,6 +39,8 @@
         .page.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .user-status { background: #0a0a0a; padding: 10px; margin-bottom: 15px; border-radius: 5px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+        
+        /* Chat Público */
         .chat-container { display: flex; flex-direction: column; height: 500px; background: #0a0a0a; border: 1px solid #4a0e4e; border-radius: 5px; }
         .chat-messages { flex: 1; overflow-y: auto; padding: 15px; }
         .message { margin-bottom: 10px; padding: 8px; background: #1a1a2e; border-radius: 5px; word-wrap: break-word; }
@@ -46,6 +48,30 @@
         .message small { font-size: 0.7em; color: #666; }
         .chat-input-area { display: flex; padding: 10px; gap: 10px; border-top: 1px solid #4a0e4e; }
         .chat-input-area input { flex: 1; padding: 10px; background: #0a0a0a; border: 1px solid #6a0dad; color: white; border-radius: 5px; }
+        
+        /* Chat Privado */
+        .private-chat-container { display: flex; gap: 15px; height: 500px; flex-wrap: wrap; }
+        .users-list {
+            width: 250px; background: #0a0a0a; border: 1px solid #4a0e4e; border-radius: 5px;
+            overflow-y: auto; padding: 10px;
+        }
+        .user-item {
+            padding: 10px; margin-bottom: 5px; background: #1a1a2e; border-radius: 5px;
+            cursor: pointer; transition: all 0.2s; border-left: 3px solid #6a0dad;
+        }
+        .user-item:hover { background: #2a0a3e; transform: translateX(5px); }
+        .user-item.online { border-left-color: #00ff00; background: #1a2a1a; }
+        .user-item.selected { background: #6a0dad; color: white; }
+        .private-chat-area { flex: 1; display: flex; flex-direction: column; background: #0a0a0a; border: 1px solid #4a0e4e; border-radius: 5px; }
+        .private-chat-header { padding: 10px; background: #1a1a2e; border-bottom: 1px solid #4a0e4e; font-weight: bold; }
+        .private-messages { flex: 1; overflow-y: auto; padding: 15px; }
+        .private-message { margin-bottom: 10px; padding: 8px; border-radius: 5px; max-width: 80%; }
+        .private-message.sent { background: #2a0a3e; margin-left: auto; text-align: right; }
+        .private-message.received { background: #1a1a2e; }
+        .private-message small { font-size: 0.7em; color: #888; }
+        .private-input-area { display: flex; padding: 10px; gap: 10px; border-top: 1px solid #4a0e4e; }
+        .private-input-area input { flex: 1; padding: 10px; background: #0a0a0a; border: 1px solid #6a0dad; color: white; border-radius: 5px; }
+        
         .post { background: #0f0f1a; margin-bottom: 15px; padding: 15px; border-radius: 5px; border-left: 4px solid; }
         .post.pinned { border: 2px solid #ffcc00; background: #1a1a2e; }
         .post.alerta { border-left-color: #ff0000; }
@@ -71,7 +97,8 @@
         .admin-btn:hover { background: #ffaa00; }
         .delete-btn { background: #ff3366; }
         .delete-btn:hover { background: #cc0044; }
-        @media (max-width: 768px) { .container { padding: 10px; } .tab-btn { font-size: 0.8em; padding: 8px 10px; } }
+        .online-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #00ff00; margin-right: 8px; }
+        @media (max-width: 768px) { .container { padding: 10px; } .tab-btn { font-size: 0.8em; padding: 8px 10px; } .private-chat-container { flex-direction: column; } .users-list { width: 100%; max-height: 200px; } }
     </style>
 </head>
 <body>
@@ -94,7 +121,8 @@
         <button class="tab-btn active" onclick="switchPage('home')">🏠 Início</button>
         <button class="tab-btn" onclick="switchPage('forum')">💬 Fórum</button>
         <button class="tab-btn" onclick="switchPage('map')">🗺️ Mapa</button>
-        <button class="tab-btn" onclick="switchPage('chat')">💭 Chat</button>
+        <button class="tab-btn" onclick="switchPage('chat')">💭 Chat Público</button>
+        <button class="tab-btn" onclick="switchPage('private')">🔒 Chat Privado</button>
         <button class="tab-btn" onclick="switchPage('missing')">📋 Desaparecidos</button>
         <button class="tab-btn" id="adminBtn" onclick="showAdminPanel()" style="display: none;">👑 Admin</button>
     </div>
@@ -103,12 +131,8 @@
         <h2>Bem-vindo à Resistência</h2>
         <p>Somos a REDE VÉU LIVRE, liderados por Rian Gomes. Lutamos contra o culto "Última Correção" que busca "corrigir" a humanidade.</p>
         <p>Aqui você pode compartilhar informações, encontrar aliados e resistir.</p>
-        <div class="alert-banner" style="margin-top: 20px;">
-            🔴 ÚLTIMA HORA: Atividade paranormal detectada no Setor Sul. Evite a região!
-        </div>
-        <div class="alert-banner">
-            🩸 Posto de suprimentos na Zona Leste - Senha: "O véu caiu"
-        </div>
+        <div class="alert-banner" style="margin-top: 20px;">🔴 ÚLTIMA HORA: Atividade paranormal detectada no Setor Sul. Evite a região!</div>
+        <div class="alert-banner">🩸 Posto de suprimentos na Zona Leste - Senha: "O véu caiu"</div>
     </div>
 
     <div id="forum" class="page">
@@ -120,13 +144,11 @@
     <div id="map" class="page">
         <h2>Mapa de Segurança - Brasil</h2>
         <div class="states-grid" id="statesGrid"></div>
-        <div id="stateInfoPanel" class="state-info-panel">
-            <p>Selecione um estado para ver informações detalhadas</p>
-        </div>
+        <div id="stateInfoPanel" class="state-info-panel"><p>Selecione um estado para ver informações detalhadas</p></div>
     </div>
 
     <div id="chat" class="page">
-        <h2>Chat da Resistência - Em Tempo Real</h2>
+        <h2>Chat Público da Resistência</h2>
         <div class="chat-container">
             <div class="chat-messages" id="chatMessages"></div>
             <div class="chat-input-area">
@@ -135,6 +157,23 @@
             </div>
         </div>
         <div id="chatStatus" style="margin-top: 10px; font-size: 0.8em;"></div>
+    </div>
+
+    <div id="private" class="page">
+        <h2>Chat Privado - Mensagens Diretas</h2>
+        <div class="private-chat-container">
+            <div class="users-list" id="usersList">
+                <p style="text-align: center; padding: 20px;">Carregando usuários...</p>
+            </div>
+            <div class="private-chat-area">
+                <div class="private-chat-header" id="privateChatHeader">Selecione um usuário para conversar</div>
+                <div class="private-messages" id="privateMessages"></div>
+                <div class="private-input-area" id="privateInputArea" style="display: none;">
+                    <input type="text" id="privateInput" placeholder="Digite sua mensagem privada..." onkeypress="if(event.key==='Enter') sendPrivateMessage()">
+                    <button onclick="sendPrivateMessage()">Enviar</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div id="missing" class="page">
@@ -191,7 +230,7 @@
             <input type="text" id="adminUsername" placeholder="Nome do usuário" style="width: 70%;">
             <button onclick="toggleAdmin()" style="margin-left: 5px;">Adicionar/Remover Admin</button>
         </div>
-        <div id="usersList" style="max-height: 300px; overflow-y: auto;">
+        <div id="usersListAdmin" style="max-height: 300px; overflow-y: auto;">
             Carregando usuários...
         </div>
         <button onclick="closeModal('adminModal')" style="margin-top: 10px;">Fechar</button>
@@ -200,17 +239,24 @@
 
 <script>
     let currentUser = null;
+    let currentIsAdmin = false;
     let socket = null;
     let posts = [];
+    let onlineUsers = [];
+    let selectedPrivateUser = null;
+    let allUsers = [];
 
-    // Verificar sessão ao carregar
+    // Verificar sessão
     async function checkSession() {
         const response = await fetch('/api/session');
         const data = await response.json();
         if (data.user) {
             currentUser = data.user;
-            document.getElementById('userStatus').innerHTML = `✅ Logado: ${currentUser} | <button onclick="logout()">Sair</button>`;
+            currentIsAdmin = data.isAdmin || false;
+            document.getElementById('userStatus').innerHTML = `✅ Logado: ${currentUser} ${currentIsAdmin ? '👑 Admin' : ''} | <button onclick="logout()">Sair</button>`;
+            document.getElementById('adminBtn').style.display = currentIsAdmin ? 'block' : 'none';
             initSocket();
+            loadUsers();
         }
     }
 
@@ -231,13 +277,33 @@
         socket.on('chat message', (msg) => addMessageToChat(msg.sender, msg.message, msg.timestamp));
         socket.on('user joined', (msg) => addSystemMessage(msg));
         socket.on('user left', (msg) => addSystemMessage(msg));
+        
+        // Chat Privado
+        socket.on('online users', (users) => {
+            onlineUsers = users;
+            loadUsers();
+        });
+        
+        socket.on('private message received', (data) => {
+            if (selectedPrivateUser === data.from) {
+                addPrivateMessage(data.from, data.message, data.timestamp, false);
+            }
+            loadUsers();
+        });
+        
+        socket.on('private message sent', (data) => {
+            if (selectedPrivateUser === data.to) {
+                addPrivateMessage(currentUser, data.message, data.timestamp, true);
+            }
+        });
     }
     
     function addMessageToChat(sender, message, timestamp) {
         const container = document.getElementById('chatMessages');
+        const time = timestamp ? new Date(timestamp).toLocaleTimeString() : new Date().toLocaleTimeString();
         const div = document.createElement('div');
         div.className = 'message';
-        div.innerHTML = `<strong>${escapeHtml(sender)}:</strong> ${escapeHtml(message)}`;
+        div.innerHTML = `<strong>${escapeHtml(sender)}:</strong> ${escapeHtml(message)}<br><small>${time}</small>`;
         container.appendChild(div);
         container.scrollTop = container.scrollHeight;
     }
@@ -256,65 +322,103 @@
     function sendChatMessage() {
         const input = document.getElementById('chatInput');
         const message = input.value.trim();
-        if (!message || !currentUser) {
-            alert('Faça login para enviar mensagens');
-            return;
-        }
-        if (socket) {
-            socket.emit('chat message', { message });
-            input.value = '';
-        }
+        if (!message || !currentUser) { alert('Faça login para enviar mensagens'); return; }
+        if (socket) { socket.emit('chat message', { message }); input.value = ''; }
     }
 
-    async function login() {
-        const username = document.getElementById('loginUser').value;
-        const password = document.getElementById('loginPass').value;
+    // ============ CHAT PRIVADO ============
+    async function loadUsers() {
+        const response = await fetch('/api/users');
+        allUsers = await response.json();
+        renderUsersList();
         
-        const response = await fetch('/api/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username, password })
-        });
-        
-        const result = await response.json();
-        if (result.success) {
-            currentUser = username;
-            document.getElementById('userStatus').innerHTML = `✅ Logado: ${currentUser} | <button onclick="logout()">Sair</button>`;
-            closeModal('loginModal');
-            initSocket();
-            loadForum();
-            alert(`Bem-vindo à resistência, ${username}`);
-        } else {
-            alert('Erro: ' + result.error);
+        // Também carregar para o admin panel
+        if (document.getElementById('usersListAdmin')) {
+            renderAdminUsersList();
         }
     }
     
-    async function register() {
-        const username = document.getElementById('loginUser').value;
-        const password = document.getElementById('loginPass').value;
+    function renderUsersList() {
+        const container = document.getElementById('usersList');
+        if (!allUsers.length) {
+            container.innerHTML = '<p style="text-align: center; padding: 20px;">Nenhum outro usuário cadastrado</p>';
+            return;
+        }
         
-        const response = await fetch('/api/register', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username, password })
+        container.innerHTML = allUsers.map(user => {
+            const isOnline = onlineUsers.includes(user.username);
+            const isSelected = selectedPrivateUser === user.username;
+            return `
+                <div class="user-item ${isOnline ? 'online' : ''} ${isSelected ? 'selected' : ''}" onclick="selectPrivateUser('${user.username}')">
+                    ${isOnline ? '<span class="online-dot"></span>' : '🔴 '}
+                    <strong>${escapeHtml(user.username)}</strong>
+                    ${user.is_admin ? ' 👑' : ''}
+                    <div style="font-size: 0.8em; color: #888;">${user.character_name || 'Sobrevivente'}</div>
+                </div>
+            `;
+        }).join('');
+    }
+    
+    function renderAdminUsersList() {
+        const container = document.getElementById('usersListAdmin');
+        container.innerHTML = allUsers.map(user => `
+            <div style="background: #0f0f1a; padding: 10px; margin: 5px 0; border-radius: 5px; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <strong>${escapeHtml(user.username)}</strong>
+                    ${user.is_admin ? '<span style="color: #ffcc00;"> 👑 ADMIN</span>' : ''}
+                    ${user.username === 'RianGomes' ? '<span style="color: #ff3366;"> ⭐ FUNDADOR</span>' : ''}
+                    <br><small>${user.character_name || 'Sobrevivente'}</small>
+                </div>
+                ${user.username !== 'RianGomes' && user.username !== currentUser ? `
+                    <button onclick="toggleAdminUser('${user.username}', ${!user.is_admin})" style="background: ${user.is_admin ? '#ff3366' : '#6a0dad'};">
+                        ${user.is_admin ? 'Remover Admin' : 'Tornar Admin'}
+                    </button>
+                ` : ''}
+            </div>
+        `).join('');
+    }
+    
+    async function selectPrivateUser(username) {
+        selectedPrivateUser = username;
+        renderUsersList();
+        
+        document.getElementById('privateChatHeader').innerHTML = `💬 Conversando com: ${escapeHtml(username)}`;
+        document.getElementById('privateInputArea').style.display = 'flex';
+        
+        socket.emit('load private messages', { withUser: username }, (messages) => {
+            const container = document.getElementById('privateMessages');
+            container.innerHTML = '';
+            messages.forEach(msg => {
+                const isSent = msg.from_user === currentUser;
+                addPrivateMessage(msg.from_user, msg.message, msg.created_at, isSent);
+            });
         });
         
-        const result = await response.json();
-        if (result.success) {
-            alert('Conta criada! Faça login.');
-        } else {
-            alert('Erro: ' + result.error);
-        }
+        socket.emit('mark messages read', { fromUser: username });
     }
     
-    async function logout() {
-        await fetch('/api/logout', { method: 'POST' });
-        currentUser = null;
-        if (socket) socket.disconnect();
-        document.getElementById('userStatus').innerHTML = '🔒 Não logado | <button onclick="showLoginModal()">Entrar</button>';
-        switchPage('home');
+    function addPrivateMessage(sender, message, timestamp, isSent) {
+        const container = document.getElementById('privateMessages');
+        const time = timestamp ? new Date(timestamp).toLocaleTimeString() : new Date().toLocaleTimeString();
+        const div = document.createElement('div');
+        div.className = `private-message ${isSent ? 'sent' : 'received'}`;
+        div.innerHTML = `<strong>${isSent ? 'Você' : escapeHtml(sender)}:</strong> ${escapeHtml(message)}<br><small>${time}</small>`;
+        container.appendChild(div);
+        container.scrollTop = container.scrollHeight;
     }
     
+    function sendPrivateMessage() {
+        const input = document.getElementById('privateInput');
+        const message = input.value.trim();
+        if (!message) return;
+        if (!selectedPrivateUser) { alert('Selecione um usuário para conversar'); return; }
+        
+        socket.emit('private message', { to: selectedPrivateUser, message });
+        addPrivateMessage(currentUser, message, new Date(), true);
+        input.value = '';
+    }
+
+    // ============ FÓRUM ============
     async function loadForum() {
         const response = await fetch('/api/posts');
         posts = await response.json();
@@ -322,20 +426,13 @@
     }
     
     async function createPost() {
-        if (!currentUser) {
-            alert('Faça login primeiro');
-            showLoginModal();
-            return;
-        }
+        if (!currentUser) { alert('Faça login primeiro'); showLoginModal(); return; }
         
         const type = document.getElementById('postType').value;
         const title = document.getElementById('postTitle').value;
         const content = document.getElementById('postContent').value;
         
-        if (!title || !content) {
-            alert('Preencha título e conteúdo!');
-            return;
-        }
+        if (!title || !content) { alert('Preencha título e conteúdo!'); return; }
         
         const response = await fetch('/api/posts', {
             method: 'POST',
@@ -350,16 +447,11 @@
             document.getElementById('postContent').value = '';
             loadForum();
             alert('Post criado com sucesso!');
-        } else {
-            alert('Erro: ' + (result.error || 'Não foi possível criar'));
-        }
+        } else { alert('Erro: ' + (result.error || 'Não foi possível criar')); }
     }
     
     async function togglePinPost(postId, pinned) {
-        if (currentUser !== 'RianGomes') {
-            alert('Apenas o administrador RianGomes pode fixar posts');
-            return;
-        }
+        if (!currentIsAdmin) { alert('Apenas administradores podem fixar posts'); return; }
         
         const response = await fetch('/api/pin-post', {
             method: 'POST',
@@ -368,11 +460,8 @@
         });
         
         const result = await response.json();
-        if (result.success) {
-            await loadForum();
-        } else {
-            alert('Erro: ' + (result.error || 'Não foi possível fixar'));
-        }
+        if (result.success) { await loadForum(); } 
+        else { alert('Erro: ' + (result.error || 'Não foi possível fixar')); }
     }
     
     async function deletePost(postId) {
@@ -385,19 +474,13 @@
         });
         
         const result = await response.json();
-        if (result.success) {
-            await loadForum();
-        } else {
-            alert('Erro: ' + (result.error || 'Não foi possível remover'));
-        }
+        if (result.success) { await loadForum(); } 
+        else { alert('Erro: ' + (result.error || 'Não foi possível remover')); }
     }
     
     function renderForum() {
         const container = document.getElementById('postsContainer');
-        if (!posts.length) {
-            container.innerHTML = '<p>Nenhum post ainda. Seja o primeiro!</p>';
-            return;
-        }
+        if (!posts.length) { container.innerHTML = '<p>Nenhum post ainda. Seja o primeiro!</p>'; return; }
         
         container.innerHTML = posts.map(post => `
             <div class="post ${post.type} ${post.pinned ? 'pinned' : ''}">
@@ -407,12 +490,12 @@
                         ${post.pinned ? '<span class="pin-badge">📌 FIXADO</span>' : ''}
                     </div>
                     <div>
-                        ${currentUser === 'RianGomes' ? `
+                        ${currentIsAdmin ? `
                             <button onclick="togglePinPost(${post.id}, ${!post.pinned})" class="admin-btn">
                                 ${post.pinned ? '📌 Desfixar' : '📍 Fixar'}
                             </button>
                         ` : ''}
-                        ${(currentUser === post.author || currentUser === 'RianGomes') && !post.deleted ? `
+                        ${(currentUser === post.author || currentIsAdmin) && !post.deleted ? `
                             <button onclick="deletePost(${post.id})" class="delete-btn">🗑️ Remover</button>
                         ` : ''}
                     </div>
@@ -430,36 +513,24 @@
         if (container.style.display === 'none') {
             container.style.display = 'block';
             await loadComments(postId);
-        } else {
-            container.style.display = 'none';
-        }
+        } else { container.style.display = 'none'; }
     }
     
     async function loadComments(postId) {
         const response = await fetch(`/api/comments/${postId}`);
         const comments = await response.json();
-        
         const container = document.getElementById(`comments-${postId}`);
         container.innerHTML = `
             <textarea id="comment-${postId}" placeholder="Seu comentário..." rows="2" style="width: 100%; margin-bottom: 5px;"></textarea>
             <button onclick="addComment(${postId})">Enviar Comentário</button>
             <div style="margin-top: 10px;">
-                ${comments.map(c => `
-                    <div style="background: #0a0a0a; padding: 8px; margin: 5px 0; border-radius: 5px;">
-                        <strong>${escapeHtml(c.author)}:</strong> ${escapeHtml(c.content)}
-                    </div>
-                `).join('')}
+                ${comments.map(c => `<div style="background: #0a0a0a; padding: 8px; margin: 5px 0; border-radius: 5px;"><strong>${escapeHtml(c.author)}:</strong> ${escapeHtml(c.content)}</div>`).join('')}
             </div>
         `;
     }
     
     async function addComment(postId) {
-        if (!currentUser) {
-            alert('Faça login para comentar');
-            showLoginModal();
-            return;
-        }
-        
+        if (!currentUser) { alert('Faça login para comentar'); showLoginModal(); return; }
         const content = document.getElementById(`comment-${postId}`).value;
         if (!content.trim()) return;
         
@@ -475,16 +546,104 @@
             loadComments(postId);
         }
     }
+
+    // ============ LOGIN/REGISTRO ============
+    async function login() {
+        const username = document.getElementById('loginUser').value;
+        const password = document.getElementById('loginPass').value;
+        
+        const response = await fetch('/api/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password })
+        });
+        
+        const result = await response.json();
+        if (result.success) {
+            currentUser = username;
+            currentIsAdmin = result.isAdmin || false;
+            document.getElementById('userStatus').innerHTML = `✅ Logado: ${currentUser} ${currentIsAdmin ? '👑 Admin' : ''} | <button onclick="logout()">Sair</button>`;
+            document.getElementById('adminBtn').style.display = currentIsAdmin ? 'block' : 'none';
+            closeModal('loginModal');
+            initSocket();
+            loadForum();
+            loadUsers();
+            alert(`Bem-vindo à resistência, ${username}`);
+        } else { alert('Erro: ' + result.error); }
+    }
     
+    async function register() {
+        const username = document.getElementById('loginUser').value;
+        const password = document.getElementById('loginPass').value;
+        
+        const response = await fetch('/api/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password })
+        });
+        
+        const result = await response.json();
+        if (result.success) { alert('Conta criada! Faça login.'); } 
+        else { alert('Erro: ' + result.error); }
+    }
+    
+    async function logout() {
+        await fetch('/api/logout', { method: 'POST' });
+        currentUser = null;
+        currentIsAdmin = false;
+        if (socket) socket.disconnect();
+        document.getElementById('userStatus').innerHTML = '🔒 Não logado | <button onclick="showLoginModal()">Entrar</button>';
+        document.getElementById('adminBtn').style.display = 'none';
+        switchPage('home');
+    }
+
+    // ============ ADMIN ============
+    async function showAdminPanel() {
+        if (!currentIsAdmin) { alert('Apenas administradores podem acessar este painel'); return; }
+        await loadUsers();
+        document.getElementById('adminModal').style.display = 'flex';
+    }
+    
+    async function toggleAdmin() {
+        const username = document.getElementById('adminUsername').value;
+        if (!username) { alert('Digite um nome de usuário'); return; }
+        
+        const user = allUsers.find(u => u.username === username);
+        if (!user) { alert('Usuário não encontrado'); return; }
+        
+        await toggleAdminUser(username, !user.is_admin);
+        document.getElementById('adminUsername').value = '';
+    }
+    
+    async function toggleAdminUser(username, makeAdmin) {
+        if (!confirm(`${makeAdmin ? 'Tornar' : 'Remover'} ${username} como administrador?`)) return;
+        
+        const response = await fetch('/api/make-admin', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, makeAdmin })
+        });
+        
+        const result = await response.json();
+        if (result.success) {
+            alert(result.message);
+            await loadUsers();
+            if (username === currentUser) {
+                currentIsAdmin = makeAdmin;
+                document.getElementById('userStatus').innerHTML = `✅ Logado: ${currentUser} ${currentIsAdmin ? '👑 Admin' : ''} | <button onclick="logout()">Sair</button>`;
+                document.getElementById('adminBtn').style.display = currentIsAdmin ? 'block' : 'none';
+            }
+        } else { alert('Erro: ' + result.error); }
+    }
+
+    // ============ MAPA ============
     async function loadStates() {
         const response = await fetch('/api/states');
         const states = await response.json();
-        
         const container = document.getElementById('statesGrid');
         container.innerHTML = states.map(state => `
             <div class="state-card ${state.safety.toLowerCase()}" onclick="showStateInfo('${state.uf}')">
-                <strong>${state.uf}</strong><br>${state.name}<br>
-                <small>Segurança: ${state.safety}</small>
+                <strong>${state.uf}</strong><br>${state.name}<br><small>Segurança: ${state.safety}</small>
             </div>
         `).join('');
     }
@@ -493,60 +652,35 @@
         const response = await fetch(`/api/state/${uf}`);
         const state = await response.json();
         const panel = document.getElementById('stateInfoPanel');
-        
         if (state && state.uf) {
             let safetyColor = state.safety === 'Alta' ? '#00ff00' : (state.safety === 'Média' ? '#ff9800' : '#ff0000');
-            panel.innerHTML = `
-                <h3>${state.name} (${state.uf})</h3>
-                <p><strong>População:</strong> ${state.population}</p>
-                <p><strong>Status:</strong> ${state.status}</p>
-                <p><strong>Grupos Dominantes:</strong> ${state.groups}</p>
-                <p><strong>Recomendação:</strong> ${state.recommendation}</p>
-                <p style="color: ${safetyColor};"><strong>Segurança:</strong> ${state.safety}</p>
-            `;
-        } else {
-            panel.innerHTML = '<p>Estado não encontrado no banco de dados.</p>';
-        }
+            panel.innerHTML = `<h3>${state.name} (${state.uf})</h3><p><strong>População:</strong> ${state.population}</p><p><strong>Status:</strong> ${state.status}</p><p><strong>Grupos Dominantes:</strong> ${state.groups}</p><p><strong>Recomendação:</strong> ${state.recommendation}</p><p style="color: ${safetyColor};"><strong>Segurança:</strong> ${state.safety}</p>`;
+        } else { panel.innerHTML = '<p>Estado não encontrado no banco de dados.</p>'; }
     }
-    
+
+    // ============ DESAPARECIDOS ============
     async function loadMissing() {
         const response = await fetch('/api/missing');
         const missing = await response.json();
-        
         const container = document.getElementById('missingContainer');
-        if (!missing.length) {
-            container.innerHTML = '<p>Nenhum desaparecido registrado.</p>';
-            return;
-        }
-        
+        if (!missing.length) { container.innerHTML = '<p>Nenhum desaparecido registrado.</p>'; return; }
         container.innerHTML = missing.map(person => `
             <div class="post" style="border-left-color: #ff3366;">
                 <h3>${escapeHtml(person.name)}</h3>
-                <p><strong>Idade:</strong> ${person.age || '?'}</p>
-                <p><strong>Local:</strong> ${escapeHtml(person.location)}</p>
-                <p><strong>Descrição:</strong> ${escapeHtml(person.description)}</p>
-                <p><strong>Status:</strong> ${person.status}</p>
+                <p><strong>Idade:</strong> ${person.age || '?'}</p><p><strong>Local:</strong> ${escapeHtml(person.location)}</p>
+                <p><strong>Descrição:</strong> ${escapeHtml(person.description)}</p><p><strong>Status:</strong> ${person.status}</p>
                 <small>Reportado por: ${person.created_by}</small>
             </div>
         `).join('');
     }
     
     async function addMissing() {
-        if (!currentUser) {
-            alert('Faça login primeiro');
-            showLoginModal();
-            return;
-        }
-        
+        if (!currentUser) { alert('Faça login primeiro'); showLoginModal(); return; }
         const name = document.getElementById('missingName').value;
         const age = document.getElementById('missingAge').value;
         const location = document.getElementById('missingLocation').value;
         const description = document.getElementById('missingDesc').value;
-        
-        if (!name || !location) {
-            alert('Nome e localização são obrigatórios');
-            return;
-        }
+        if (!name || !location) { alert('Nome e localização são obrigatórios'); return; }
         
         const response = await fetch('/api/missing', {
             method: 'POST',
@@ -563,11 +697,9 @@
             document.getElementById('missingLocation').value = '';
             document.getElementById('missingDesc').value = '';
             alert('Pessoa adicionada ao quadro!');
-        } else {
-            alert('Erro: ' + (result.error || 'Não foi possível adicionar'));
-        }
+        } else { alert('Erro: ' + (result.error || 'Não foi possível adicionar')); }
     }
-    
+
     function getTypeIcon(type) {
         const icons = { alerta: '🔴', discussao: '🟡', relato: '🔵', ajuda: '🩸' };
         return icons[type] || '📝';
@@ -584,207 +716,26 @@
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         document.getElementById(pageId).classList.add('active');
         
-        // Atualizar abas ativas
-        document.querySelectorAll('.tab-btn').forEach((btn, index) => {
-            const pages = ['home', 'forum', 'map', 'chat', 'missing'];
-            if (pages[index] === pageId) {
-                btn.classList.add('active');
-            } else {
-                btn.classList.remove('active');
-            }
-        });
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        const pages = ['home', 'forum', 'map', 'chat', 'private', 'missing', 'admin'];
+        const index = pages.indexOf(pageId);
+        if (index >= 0 && document.querySelectorAll('.tab-btn')[index]) {
+            document.querySelectorAll('.tab-btn')[index].classList.add('active');
+        }
         
         if (pageId === 'forum') loadForum();
         if (pageId === 'missing') loadMissing();
         if (pageId === 'map') loadStates();
+        if (pageId === 'private') { loadUsers(); if (selectedPrivateUser) selectPrivateUser(selectedPrivateUser); }
     }
-
-    // Variável para saber se usuário é admin
-let isCurrentUserAdmin = false;
-
-// Verificar se usuário é admin ao logar
-async function checkIfAdmin() {
-    const response = await fetch('/api/check-admin');
-    const data = await response.json();
-    isCurrentUserAdmin = data.isAdmin;
-    
-    const adminBtn = document.getElementById('adminBtn');
-    if (adminBtn) {
-        adminBtn.style.display = isCurrentUserAdmin ? 'block' : 'none';
-    }
-}
-
-// Mostrar painel de admin
-async function showAdminPanel() {
-    if (!isCurrentUserAdmin) {
-        alert('Apenas administradores podem acessar este painel');
-        return;
-    }
-    
-    await loadUsersList();
-    document.getElementById('adminModal').style.display = 'flex';
-}
-
-// Carregar lista de usuários
-async function loadUsersList() {
-    const response = await fetch('/api/users');
-    const users = await response.json();
-    
-    const container = document.getElementById('usersList');
-    container.innerHTML = users.map(user => `
-        <div style="background: #0f0f1a; padding: 10px; margin: 5px 0; border-radius: 5px; display: flex; justify-content: space-between; align-items: center;">
-            <div>
-                <strong>${escapeHtml(user.username)}</strong>
-                ${user.is_admin ? '<span style="color: #ffcc00;"> 👑 ADMIN</span>' : ''}
-                ${user.username === 'RianGomes' ? '<span style="color: #ff3366;"> ⭐ FUNDADOR</span>' : ''}
-                <br><small>${user.character_name || 'Sobrevivente'}</small>
-            </div>
-            ${user.username !== 'RianGomes' ? `
-                <button onclick="toggleAdminUser('${user.username}', ${!user.is_admin})" style="background: ${user.is_admin ? '#ff3366' : '#6a0dad'};">
-                    ${user.is_admin ? 'Remover Admin' : 'Tornar Admin'}
-                </button>
-            ` : ''}
-        </div>
-    `).join('');
-}
-
-// Tornar/remover usuário admin
-async function toggleAdminUser(username, makeAdmin) {
-    if (!confirm(`${makeAdmin ? 'Tornar' : 'Remover'} ${username} como administrador?`)) return;
-    
-    const response = await fetch('/api/make-admin', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, makeAdmin })
-    });
-    
-    const result = await response.json();
-    if (result.success) {
-        alert(result.message);
-        loadUsersList();
-        if (username === currentUser) {
-            checkIfAdmin();
-        }
-    } else {
-        alert('Erro: ' + result.error);
-    }
-}
-
-// Função antiga toggleAdmin (para o input)
-async function toggleAdmin() {
-    const username = document.getElementById('adminUsername').value;
-    if (!username) {
-        alert('Digite um nome de usuário');
-        return;
-    }
-    
-    // Primeiro, buscar se usuário existe e é admin
-    const response = await fetch('/api/users');
-    const users = await response.json();
-    const user = users.find(u => u.username === username);
-    
-    if (!user) {
-        alert('Usuário não encontrado');
-        return;
-    }
-    
-    toggleAdminUser(username, !user.is_admin);
-    document.getElementById('adminUsername').value = '';
-}
-
-// Atualizar a função login para capturar isAdmin
-async function login() {
-    const username = document.getElementById('loginUser').value;
-    const password = document.getElementById('loginPass').value;
-    
-    const response = await fetch('/api/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password })
-    });
-    
-    const result = await response.json();
-    if (result.success) {
-        currentUser = username;
-        isCurrentUserAdmin = result.isAdmin || false;
-        document.getElementById('userStatus').innerHTML = `✅ Logado: ${currentUser} ${isCurrentUserAdmin ? '👑' : ''} | <button onclick="logout()">Sair</button>`;
-        closeModal('loginModal');
-        initSocket();
-        loadForum();
-        checkIfAdmin();
-        alert(`Bem-vindo à resistência, ${username}`);
-    } else {
-        alert('Erro: ' + result.error);
-    }
-}
-
-// Atualizar a função checkSession
-async function checkSession() {
-    const response = await fetch('/api/session');
-    const data = await response.json();
-    if (data.user) {
-        currentUser = data.user;
-        isCurrentUserAdmin = data.isAdmin || false;
-        document.getElementById('userStatus').innerHTML = `✅ Logado: ${currentUser} ${isCurrentUserAdmin ? '👑' : ''} | <button onclick="logout()">Sair</button>`;
-        initSocket();
-        checkIfAdmin();
-    }
-}
-
-// Atualizar a função renderForum para mostrar botões de admin
-function renderForum() {
-    const container = document.getElementById('postsContainer');
-    if (!posts.length) {
-        container.innerHTML = '<p>Nenhum post ainda. Seja o primeiro!</p>';
-        return;
-    }
-    
-    container.innerHTML = posts.map(post => `
-        <div class="post ${post.type} ${post.pinned ? 'pinned' : ''}">
-            <div style="display: flex; justify-content: space-between; margin-bottom: 10px; flex-wrap: wrap; gap: 10px;">
-                <div>
-                    <strong>${getTypeIcon(post.type)} ${escapeHtml(post.author)}</strong>
-                    ${post.pinned ? '<span class="pin-badge">📌 FIXADO</span>' : ''}
-                </div>
-                <div>
-                    ${isCurrentUserAdmin ? `
-                        <button onclick="togglePinPost(${post.id}, ${!post.pinned})" class="admin-btn">
-                            ${post.pinned ? '📌 Desfixar' : '📍 Fixar'}
-                        </button>
-                    ` : ''}
-                    ${(currentUser === post.author || isCurrentUserAdmin) && !post.deleted ? `
-                        <button onclick="deletePost(${post.id})" class="delete-btn">🗑️ Remover</button>
-                    ` : ''}
-                </div>
-            </div>
-            <h3>${escapeHtml(post.title)}</h3>
-            <p>${escapeHtml(post.content)}</p>
-            <button onclick="toggleComments(${post.id})">💬 Comentar</button>
-            <div id="comments-${post.id}" style="display: none; margin-top: 10px;"></div>
-        </div>
-    `).join('');
-}
     
     function showLoginModal() { document.getElementById('loginModal').style.display = 'flex'; }
-    function showNewPostModal() {
-        if (!currentUser) { alert('Faça login para postar'); showLoginModal(); return; }
-        document.getElementById('postModal').style.display = 'flex';
-    }
-    function showNewMissingModal() {
-        if (!currentUser) { alert('Faça login para adicionar'); showLoginModal(); return; }
-        document.getElementById('missingModal').style.display = 'flex';
-    }
+    function showNewPostModal() { if (!currentUser) { alert('Faça login para postar'); showLoginModal(); return; } document.getElementById('postModal').style.display = 'flex'; }
+    function showNewMissingModal() { if (!currentUser) { alert('Faça login para adicionar'); showLoginModal(); return; } document.getElementById('missingModal').style.display = 'flex'; }
     function closeModal(modalId) { document.getElementById(modalId).style.display = 'none'; }
     
-    // Fechar modal clicando fora
-    window.onclick = function(event) {
-        if (event.target.classList.contains('modal')) {
-            event.target.style.display = 'none';
-        }
-    }
+    window.onclick = function(event) { if (event.target.classList.contains('modal')) event.target.style.display = 'none'; }
     
-    
-    // Inicialização
     checkSession();
     loadForum();
     loadMissing();
