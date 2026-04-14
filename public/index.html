@@ -236,7 +236,7 @@
         <button onclick="closeModal('adminModal')" style="margin-top: 10px;">Fechar</button>
     </div>
 </div>
-
+    
 <script>
     let currentUser = null;
     let currentIsAdmin = false;
@@ -284,17 +284,21 @@
             loadUsers();
         });
         
+        // CORREÇÃO: Receber mensagem privada (não duplica)
         socket.on('private message received', (data) => {
+            // Se a conversa com esse usuário está aberta, adiciona a mensagem
             if (selectedPrivateUser === data.from) {
                 addPrivateMessage(data.from, data.message, data.timestamp, false);
             }
+            // Atualizar lista de usuários para mostrar notificação
             loadUsers();
         });
         
-        socket.on('private message sent', (data) => {
-            if (selectedPrivateUser === data.to) {
-                addPrivateMessage(currentUser, data.message, data.timestamp, true);
-            }
+        // CORREÇÃO: Não adicionar mensagem duplicada para o remetente
+        // O remetente já adicionou localmente, então ignoramos este evento
+        socket.on('private message confirmed', (data) => {
+            // Apenas confirmar envio, sem adicionar mensagem
+            console.log('Mensagem entregue para:', data.to);
         });
     }
     
@@ -332,7 +336,6 @@
         allUsers = await response.json();
         renderUsersList();
         
-        // Também carregar para o admin panel
         if (document.getElementById('usersListAdmin')) {
             renderAdminUsersList();
         }
@@ -379,26 +382,49 @@
     }
     
     async function selectPrivateUser(username) {
+        if (username === selectedPrivateUser) return;
+        
         selectedPrivateUser = username;
         renderUsersList();
         
         document.getElementById('privateChatHeader').innerHTML = `💬 Conversando com: ${escapeHtml(username)}`;
         document.getElementById('privateInputArea').style.display = 'flex';
         
+        // Limpar mensagens antigas
+        document.getElementById('privateMessages').innerHTML = '<div style="text-align: center; padding: 20px;">Carregando mensagens...</div>';
+        
+        // Carregar histórico de mensagens
         socket.emit('load private messages', { withUser: username }, (messages) => {
             const container = document.getElementById('privateMessages');
             container.innerHTML = '';
-            messages.forEach(msg => {
-                const isSent = msg.from_user === currentUser;
-                addPrivateMessage(msg.from_user, msg.message, msg.created_at, isSent);
-            });
+            if (messages && messages.length > 0) {
+                messages.forEach(msg => {
+                    const isSent = msg.from_user === currentUser;
+                    addPrivateMessageToContainer(msg.from_user, msg.message, msg.created_at, isSent);
+                });
+            } else {
+                container.innerHTML = '<div style="text-align: center; padding: 20px; color: #888;">Nenhuma mensagem ainda. Envie uma mensagem para iniciar a conversa!</div>';
+            }
         });
         
+        // Marcar mensagens como lidas
         socket.emit('mark messages read', { fromUser: username });
     }
     
-    function addPrivateMessage(sender, message, timestamp, isSent) {
+    // Função separada para adicionar mensagem ao container (sem duplicação)
+    function addPrivateMessageToContainer(sender, message, timestamp, isSent) {
         const container = document.getElementById('privateMessages');
+        
+        // Remover mensagem de "carregando" se existir
+        if (container.innerHTML.includes('Carregando mensagens')) {
+            container.innerHTML = '';
+        }
+        
+        // Remover mensagem de "nenhuma mensagem" se existir
+        if (container.innerHTML.includes('Nenhuma mensagem ainda')) {
+            container.innerHTML = '';
+        }
+        
         const time = timestamp ? new Date(timestamp).toLocaleTimeString() : new Date().toLocaleTimeString();
         const div = document.createElement('div');
         div.className = `private-message ${isSent ? 'sent' : 'received'}`;
@@ -407,16 +433,85 @@
         container.scrollTop = container.scrollHeight;
     }
     
+    // Função para adicionar mensagem quando recebe em tempo real
+    function addPrivateMessage(sender, message, timestamp, isSent) {
+        addPrivateMessageToContainer(sender, message, timestamp, isSent);
+    }
+    
     function sendPrivateMessage() {
         const input = document.getElementById('privateInput');
         const message = input.value.trim();
         if (!message) return;
-        if (!selectedPrivateUser) { alert('Selecione um usuário para conversar'); return; }
+        if (!selectedPrivateUser) { 
+            alert('Selecione um usuário para conversar'); 
+            return; 
+        }
         
-        socket.emit('private message', { to: selectedPrivateUser, message });
-        addPrivateMessage(currentUser, message, new Date(), true);
+        // Adicionar mensagem localmente IMEDIATAMENTE (sem esperar confirmação)
+        addPrivateMessageToContainer(currentUser, message, new Date(), true);
+        
+        // Limpar input
         input.value = '';
+        
+        // Enviar via socket
+        socket.emit('private message', { to: selectedPrivateUser, message });
     }
+    
+    // Função para atualizar mensagens em tempo real (polling também)
+    let lastMessageCheck = 0;
+    async function refreshPrivateMessages() {
+        if (!selectedPrivateUser) return;
+        
+        const now = Date.now();
+        if (now - lastMessageCheck < 2000) return; // A cada 2 segundos
+        lastMessageCheck = now;
+        
+        socket.emit('load private messages', { withUser: selectedPrivateUser }, (messages) => {
+            if (messages && messages.length > 0) {
+                const container = document.getElementById('privateMessages');
+                const currentMessages = container.querySelectorAll('.private-message');
+                
+                // Se não tem mensagens no container, recarrega tudo
+                if (currentMessages.length === 0 || container.innerHTML.includes('Nenhuma mensagem')) {
+                    container.innerHTML = '';
+                    messages.forEach(msg => {
+                        const isSent = msg.from_user === currentUser;
+                        addPrivateMessageToContainer(msg.from_user, msg.message, msg.created_at, isSent);
+                    });
+                } else {
+                    // Verificar se há novas mensagens
+                    const lastMessageTime = currentMessages[currentMessages.length - 1]?.querySelector('small')?.innerText;
+                    const lastDbMessage = messages[messages.length - 1];
+                    if (lastDbMessage && lastDbMessage.created_at) {
+                        const dbTime = new Date(lastDbMessage.created_at).toLocaleTimeString();
+                        if (lastMessageTime !== dbTime) {
+                            // Recarregar apenas as novas
+                            const existingIds = new Set();
+                            currentMessages.forEach(msg => {
+                                const text = msg.querySelector('strong')?.innerText || '';
+                                existingIds.add(text);
+                            });
+                            
+                            messages.forEach(msg => {
+                                const isSent = msg.from_user === currentUser;
+                                const msgKey = `${msg.from_user}:${msg.message.substring(0, 20)}`;
+                                if (!existingIds.has(msgKey) && msg.from_user !== currentUser) {
+                                    addPrivateMessageToContainer(msg.from_user, msg.message, msg.created_at, isSent);
+                                }
+                            });
+                        }
+                    }
+                }
+            }
+        });
+    }
+    
+    // Atualizar mensagens privadas periodicamente
+    setInterval(() => {
+        if (selectedPrivateUser && socket) {
+            refreshPrivateMessages();
+        }
+    }, 3000);
 
     // ============ FÓRUM ============
     async function loadForum() {
@@ -591,6 +686,7 @@
         await fetch('/api/logout', { method: 'POST' });
         currentUser = null;
         currentIsAdmin = false;
+        selectedPrivateUser = null;
         if (socket) socket.disconnect();
         document.getElementById('userStatus').innerHTML = '🔒 Não logado | <button onclick="showLoginModal()">Entrar</button>';
         document.getElementById('adminBtn').style.display = 'none';
@@ -717,7 +813,7 @@
         document.getElementById(pageId).classList.add('active');
         
         document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-        const pages = ['home', 'forum', 'map', 'chat', 'private', 'missing', 'admin'];
+        const pages = ['home', 'forum', 'map', 'chat', 'private', 'missing'];
         const index = pages.indexOf(pageId);
         if (index >= 0 && document.querySelectorAll('.tab-btn')[index]) {
             document.querySelectorAll('.tab-btn')[index].classList.add('active');
@@ -726,7 +822,12 @@
         if (pageId === 'forum') loadForum();
         if (pageId === 'missing') loadMissing();
         if (pageId === 'map') loadStates();
-        if (pageId === 'private') { loadUsers(); if (selectedPrivateUser) selectPrivateUser(selectedPrivateUser); }
+        if (pageId === 'private') { 
+            loadUsers(); 
+            if (selectedPrivateUser) {
+                selectPrivateUser(selectedPrivateUser);
+            }
+        }
     }
     
     function showLoginModal() { document.getElementById('loginModal').style.display = 'flex'; }
