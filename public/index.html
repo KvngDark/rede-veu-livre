@@ -96,6 +96,7 @@
         <button class="tab-btn" onclick="switchPage('map')">🗺️ Mapa</button>
         <button class="tab-btn" onclick="switchPage('chat')">💭 Chat</button>
         <button class="tab-btn" onclick="switchPage('missing')">📋 Desaparecidos</button>
+        <button class="tab-btn" id="adminBtn" onclick="showAdminPanel()" style="display: none;">👑 Admin</button>
     </div>
 
     <div id="home" class="page active">
@@ -179,6 +180,21 @@
         <textarea id="missingDesc" placeholder="Descrição..."></textarea><br><br>
         <button onclick="addMissing()">Adicionar</button>
         <button onclick="closeModal('missingModal')">Cancelar</button>
+    </div>
+</div>
+    
+<div id="adminModal" class="modal">
+    <div class="modal-content">
+        <h3>👑 Painel de Administradores</h3>
+        <p>Gerencie quem pode moderar o fórum e fixar posts.</p>
+        <div style="margin: 15px 0;">
+            <input type="text" id="adminUsername" placeholder="Nome do usuário" style="width: 70%;">
+            <button onclick="toggleAdmin()" style="margin-left: 5px;">Adicionar/Remover Admin</button>
+        </div>
+        <div id="usersList" style="max-height: 300px; overflow-y: auto;">
+            Carregando usuários...
+        </div>
+        <button onclick="closeModal('adminModal')" style="margin-top: 10px;">Fechar</button>
     </div>
 </div>
 
@@ -582,6 +598,172 @@
         if (pageId === 'missing') loadMissing();
         if (pageId === 'map') loadStates();
     }
+
+    // Variável para saber se usuário é admin
+let isCurrentUserAdmin = false;
+
+// Verificar se usuário é admin ao logar
+async function checkIfAdmin() {
+    const response = await fetch('/api/check-admin');
+    const data = await response.json();
+    isCurrentUserAdmin = data.isAdmin;
+    
+    const adminBtn = document.getElementById('adminBtn');
+    if (adminBtn) {
+        adminBtn.style.display = isCurrentUserAdmin ? 'block' : 'none';
+    }
+}
+
+// Mostrar painel de admin
+async function showAdminPanel() {
+    if (!isCurrentUserAdmin) {
+        alert('Apenas administradores podem acessar este painel');
+        return;
+    }
+    
+    await loadUsersList();
+    document.getElementById('adminModal').style.display = 'flex';
+}
+
+// Carregar lista de usuários
+async function loadUsersList() {
+    const response = await fetch('/api/users');
+    const users = await response.json();
+    
+    const container = document.getElementById('usersList');
+    container.innerHTML = users.map(user => `
+        <div style="background: #0f0f1a; padding: 10px; margin: 5px 0; border-radius: 5px; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <strong>${escapeHtml(user.username)}</strong>
+                ${user.is_admin ? '<span style="color: #ffcc00;"> 👑 ADMIN</span>' : ''}
+                ${user.username === 'RianGomes' ? '<span style="color: #ff3366;"> ⭐ FUNDADOR</span>' : ''}
+                <br><small>${user.character_name || 'Sobrevivente'}</small>
+            </div>
+            ${user.username !== 'RianGomes' ? `
+                <button onclick="toggleAdminUser('${user.username}', ${!user.is_admin})" style="background: ${user.is_admin ? '#ff3366' : '#6a0dad'};">
+                    ${user.is_admin ? 'Remover Admin' : 'Tornar Admin'}
+                </button>
+            ` : ''}
+        </div>
+    `).join('');
+}
+
+// Tornar/remover usuário admin
+async function toggleAdminUser(username, makeAdmin) {
+    if (!confirm(`${makeAdmin ? 'Tornar' : 'Remover'} ${username} como administrador?`)) return;
+    
+    const response = await fetch('/api/make-admin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, makeAdmin })
+    });
+    
+    const result = await response.json();
+    if (result.success) {
+        alert(result.message);
+        loadUsersList();
+        if (username === currentUser) {
+            checkIfAdmin();
+        }
+    } else {
+        alert('Erro: ' + result.error);
+    }
+}
+
+// Função antiga toggleAdmin (para o input)
+async function toggleAdmin() {
+    const username = document.getElementById('adminUsername').value;
+    if (!username) {
+        alert('Digite um nome de usuário');
+        return;
+    }
+    
+    // Primeiro, buscar se usuário existe e é admin
+    const response = await fetch('/api/users');
+    const users = await response.json();
+    const user = users.find(u => u.username === username);
+    
+    if (!user) {
+        alert('Usuário não encontrado');
+        return;
+    }
+    
+    toggleAdminUser(username, !user.is_admin);
+    document.getElementById('adminUsername').value = '';
+}
+
+// Atualizar a função login para capturar isAdmin
+async function login() {
+    const username = document.getElementById('loginUser').value;
+    const password = document.getElementById('loginPass').value;
+    
+    const response = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+    });
+    
+    const result = await response.json();
+    if (result.success) {
+        currentUser = username;
+        isCurrentUserAdmin = result.isAdmin || false;
+        document.getElementById('userStatus').innerHTML = `✅ Logado: ${currentUser} ${isCurrentUserAdmin ? '👑' : ''} | <button onclick="logout()">Sair</button>`;
+        closeModal('loginModal');
+        initSocket();
+        loadForum();
+        checkIfAdmin();
+        alert(`Bem-vindo à resistência, ${username}`);
+    } else {
+        alert('Erro: ' + result.error);
+    }
+}
+
+// Atualizar a função checkSession
+async function checkSession() {
+    const response = await fetch('/api/session');
+    const data = await response.json();
+    if (data.user) {
+        currentUser = data.user;
+        isCurrentUserAdmin = data.isAdmin || false;
+        document.getElementById('userStatus').innerHTML = `✅ Logado: ${currentUser} ${isCurrentUserAdmin ? '👑' : ''} | <button onclick="logout()">Sair</button>`;
+        initSocket();
+        checkIfAdmin();
+    }
+}
+
+// Atualizar a função renderForum para mostrar botões de admin
+function renderForum() {
+    const container = document.getElementById('postsContainer');
+    if (!posts.length) {
+        container.innerHTML = '<p>Nenhum post ainda. Seja o primeiro!</p>';
+        return;
+    }
+    
+    container.innerHTML = posts.map(post => `
+        <div class="post ${post.type} ${post.pinned ? 'pinned' : ''}">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 10px; flex-wrap: wrap; gap: 10px;">
+                <div>
+                    <strong>${getTypeIcon(post.type)} ${escapeHtml(post.author)}</strong>
+                    ${post.pinned ? '<span class="pin-badge">📌 FIXADO</span>' : ''}
+                </div>
+                <div>
+                    ${isCurrentUserAdmin ? `
+                        <button onclick="togglePinPost(${post.id}, ${!post.pinned})" class="admin-btn">
+                            ${post.pinned ? '📌 Desfixar' : '📍 Fixar'}
+                        </button>
+                    ` : ''}
+                    ${(currentUser === post.author || isCurrentUserAdmin) && !post.deleted ? `
+                        <button onclick="deletePost(${post.id})" class="delete-btn">🗑️ Remover</button>
+                    ` : ''}
+                </div>
+            </div>
+            <h3>${escapeHtml(post.title)}</h3>
+            <p>${escapeHtml(post.content)}</p>
+            <button onclick="toggleComments(${post.id})">💬 Comentar</button>
+            <div id="comments-${post.id}" style="display: none; margin-top: 10px;"></div>
+        </div>
+    `).join('');
+}
     
     function showLoginModal() { document.getElementById('loginModal').style.display = 'flex'; }
     function showNewPostModal() {
@@ -600,6 +782,7 @@
             event.target.style.display = 'none';
         }
     }
+    
     
     // Inicialização
     checkSession();
