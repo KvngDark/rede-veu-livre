@@ -376,10 +376,12 @@ app.post('/api/logout', (req, res) => {
     res.json({ success: true });
 });
 
-// Listar posts
+// Listar posts (ordenados: fixados primeiro, depois ajuda, depois outros)
 app.get('/api/posts', (req, res) => {
     db.query(`SELECT * FROM forum_posts WHERE deleted = FALSE 
-              ORDER BY CASE WHEN type = 'ajuda' THEN 0 ELSE 1 END, created_at DESC`, 
+              ORDER BY pinned DESC, 
+                       CASE WHEN type = 'ajuda' THEN 0 ELSE 1 END, 
+                       created_at DESC`, 
         (err, results) => {
             if (err) return res.status(500).json({ error: err.message });
             res.json(results);
@@ -389,7 +391,7 @@ app.get('/api/posts', (req, res) => {
 // Criar post
 app.post('/api/posts', (req, res) => {
     if (!req.session.user) {
-        return res.status(401).json({ error: 'Faca login primeiro' });
+        return res.status(401).json({ error: 'Faça login primeiro' });
     }
     
     const { type, title, content } = req.body;
@@ -401,29 +403,72 @@ app.post('/api/posts', (req, res) => {
     db.query('INSERT INTO forum_posts (type, title, author, content) VALUES (?, ?, ?, ?)',
         [type, title, req.session.user, content], (err, result) => {
             if (err) {
+                console.error('Erro ao criar post:', err);
                 return res.status(500).json({ error: 'Erro ao criar post' });
             }
             res.json({ success: true, postId: result.insertId });
         });
 });
 
-// Deletar post (apenas admin)
-app.delete('/api/posts/:id', (req, res) => {
-    if (!req.session.user) return res.status(401).json({ error: 'Nao logado' });
+// Fixar/Desfixar post (apenas admin)
+app.post('/api/pin-post', (req, res) => {
+    if (!req.session.user || req.session.user !== 'RianGomes') {
+        return res.status(403).json({ error: 'Apenas o administrador pode fixar posts' });
+    }
     
-    db.query('SELECT is_admin FROM users WHERE username = ?', [req.session.user], (err, results) => {
-        if (err || !results[0]?.is_admin) {
-            return res.status(403).json({ error: 'Apenas administradores podem deletar posts' });
-        }
+    const { postId, pinned } = req.body;
+    
+    db.query('UPDATE forum_posts SET pinned = ? WHERE id = ?',
+        [pinned ? 1 : 0, postId], (err) => {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ success: true });
+        });
+});
+
+// Deletar post (admin ou autor)
+app.post('/api/delete-post', (req, res) => {
+    if (!req.session.user) {
+        return res.status(401).json({ error: 'Não logado' });
+    }
+    
+    const { postId } = req.body;
+    
+    db.query('SELECT author FROM forum_posts WHERE id = ?', [postId], (err, results) => {
+        if (err || results.length === 0) return res.status(404).json({ error: 'Post não encontrado' });
         
-        db.query('UPDATE forum_posts SET deleted = TRUE WHERE id = ?',
-            [req.params.id], (err) => {
-                if (err) return res.status(500).json({ error: err.message });
-                res.json({ success: true });
-            });
+        if (results[0].author === req.session.user || req.session.user === 'RianGomes') {
+            db.query('UPDATE forum_posts SET deleted = TRUE, content = "removido pela moderação" WHERE id = ?', 
+                [postId], (err) => {
+                    if (err) return res.status(500).json({ error: err.message });
+                    res.json({ success: true });
+                });
+        } else {
+            res.status(403).json({ error: 'Sem permissão' });
+        }
     });
 });
 
+// Comentários
+app.get('/api/comments/:postId', (req, res) => {
+    db.query('SELECT * FROM comments WHERE post_id = ? ORDER BY created_at ASC',
+        [req.params.postId], (err, results) => {
+            res.json(results || []);
+        });
+});
+
+app.post('/api/comments', (req, res) => {
+    if (!req.session.user) {
+        return res.status(401).json({ error: 'Faça login primeiro' });
+    }
+    
+    const { postId, content } = req.body;
+    
+    db.query('INSERT INTO comments (post_id, author, content) VALUES (?, ?, ?)',
+        [postId, req.session.user, content], (err) => {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ success: true });
+        });
+});
 // Deletar desaparecido (apenas admin)
 app.delete('/api/missing/:id', (req, res) => {
     if (!req.session.user) return res.status(401).json({ error: 'Nao logado' });
@@ -438,28 +483,6 @@ app.delete('/api/missing/:id', (req, res) => {
             res.json({ success: true });
         });
     });
-});
-
-// Comentários
-app.get('/api/comments/:postId', (req, res) => {
-    db.query('SELECT * FROM comments WHERE post_id = ? ORDER BY created_at ASC',
-        [req.params.postId], (err, results) => {
-            res.json(results || []);
-        });
-});
-
-app.post('/api/comments', (req, res) => {
-    if (!req.session.user) {
-        return res.status(401).json({ error: 'Faca login primeiro' });
-    }
-    
-    const { postId, content } = req.body;
-    
-    db.query('INSERT INTO comments (post_id, author, content) VALUES (?, ?, ?)',
-        [postId, req.session.user, content], (err) => {
-            if (err) return res.status(500).json({ error: err.message });
-            res.json({ success: true });
-        });
 });
 
 // Desaparecidos
