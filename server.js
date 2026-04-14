@@ -236,21 +236,33 @@ io.on('connection', (socket) => {
     });
     
     // Mensagem privada
-    socket.on('private message', (data) => {
-        const { to, message } = data;
-        
-        db.query('INSERT INTO private_messages (from_user, to_user, message) VALUES (?, ?, ?)',
-            [socket.username, to, message], (err) => {
-                if (!err) {
-                    io.to(to).emit('private message received', {
+socket.on('private message', (data) => {
+    const { to, message } = data;
+    
+    db.query('INSERT INTO private_messages (from_user, to_user, message) VALUES (?, ?, ?)',
+        [socket.username, to, message], (err) => {
+            if (!err) {
+                // Enviar para o destinatário se estiver online
+                const targetSocketId = onlineUsers.get(to);
+                if (targetSocketId) {
+                    io.to(targetSocketId).emit('private message received', {
                         from: socket.username,
                         message: message,
                         timestamp: new Date()
                     });
-                    socket.emit('private message sent', { to, message });
                 }
-            });
-    });
+                // Enviar confirmação para o remetente (SEM adicionar mensagem duplicada)
+                socket.emit('private message confirmed', { 
+                    to: to, 
+                    message: message,
+                    timestamp: new Date()
+                });
+            } else {
+                console.error('Erro ao salvar mensagem privada:', err);
+                socket.emit('private message error', { error: 'Erro ao enviar mensagem' });
+            }
+        });
+});
     
     // Carregar mensagens privadas
     socket.on('load private messages', (data, callback) => {
