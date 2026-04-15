@@ -59,6 +59,33 @@ db.connect((err) => {
 // Keep connection alive
 setInterval(() => db.query('SELECT 1', (err) => err && console.log('Keepalive failed')), 30000);
 
+// ============ LIMPAR MENSAGENS ANTIGAS ============
+// Função para apagar mensagens do chat público com mais de 48 horas
+function limparMensagensAntigas() {
+    const query = `
+        DELETE FROM chat_messages 
+        WHERE timestamp < DATE_SUB(NOW(), INTERVAL 48 HOUR)
+    `;
+    
+    db.query(query, (err, result) => {
+        if (err) {
+            console.error('❌ Erro ao limpar mensagens antigas:', err.message);
+        } else if (result.affectedRows > 0) {
+            console.log(`🗑️ Limpeza automática: ${result.affectedRows} mensagens antigas removidas do chat público`);
+        }
+    });
+}
+
+// Executar limpeza a cada 1 hora
+setInterval(() => {
+    limparMensagensAntigas();
+}, 60 * 60 * 1000); // 1 hora
+
+// Executar uma limpeza imediatamente quando o servidor iniciar
+setTimeout(() => {
+    limparMensagensAntigas();
+}, 5000); // 5 segundos após iniciar
+
 function criarTabelas() {
     const sqlTables = `
         CREATE TABLE IF NOT EXISTS users (
